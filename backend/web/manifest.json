@@ -1,0 +1,13 @@
+{
+  "name": "Насосолинго",
+  "short_name": "Насосолинго",
+  "description": "Учись подбирать и ставить насосы",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#E9F4F9",
+  "theme_color": "#10B0D6",
+  "icons": [
+    { "src": "/static/img/icons/app-icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/static/img/icons/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

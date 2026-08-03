@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#10B0D6">
+<title>Насосолинго</title>
+<!-- Иконка для домашнего экрана. Замени файл — поменяется иконка. -->
+<link rel="apple-touch-icon" href="/static/img/icons/app-icon-180.png">
+<link rel="icon" type="image/png" href="/static/img/icons/app-icon-180.png">
+<link rel="manifest" href="/static/manifest.json">
+<style>
+  :root{
+    --ink:#0C3A4C; --ink-soft:#5C7C8A;
+    --aqua:#10B0D6; --aqua-dark:#0B85A4;
+    --spring:#38C173; --spring-dark:#28A05C;
+    --coral:#F0603F; --coral-dark:#CE4327;
+    --drop:#22A7E0; --brass:#E3A130;
+    --card:#FFFFFF; --line:#DCEAF0; --lock:#B9CBD4;
+    --soil1:#CBA574; --soil2:#B0894F; --sand:#DAC488; --water:#5FB6E4;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;height:100%;overscroll-behavior:none}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:#E9F4F9;color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  #root{flex:1;display:flex;flex-direction:column;max-width:520px;width:100%;margin:0 auto;position:relative;overflow:hidden}
+
+  .btn{
+    font:inherit;font-weight:800;font-size:16px;letter-spacing:.02em;
+    border:none;border-radius:16px;padding:15px 18px;width:100%;
+    color:#fff;background:var(--aqua);box-shadow:0 5px 0 var(--aqua-dark);
+    cursor:pointer;text-transform:uppercase;transition:transform .05s,box-shadow .05s;
+  }
+  .btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--aqua-dark)}
+  .btn.green{background:var(--spring);box-shadow:0 5px 0 var(--spring-dark)}
+  .btn.ghost{background:#fff;color:var(--aqua);box-shadow:0 0 0 2px var(--line) inset}
+  .btn:disabled{background:#E4EDF1;color:#A9BEC8;box-shadow:0 5px 0 #D2E0E7}
+
+  .pad{padding:22px}
+  .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px}
+  h1{font-size:26px;margin:0}
+  .muted{color:var(--ink-soft);font-size:14px;line-height:1.5}
+  input{
+    font:inherit;width:100%;padding:14px 16px;border-radius:14px;
+    border:2px solid var(--line);background:#fff;color:var(--ink);
+  }
+  input:focus{outline:none;border-color:var(--aqua)}
+  .err{background:#FDEEEA;color:#8F3320;border-radius:12px;padding:11px 14px;font-size:14px;font-weight:600}
+
+  /* верхняя панель */
+  .topbar{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border-bottom:2px solid var(--line);flex:none}
+  .stat{display:flex;align-items:center;gap:5px;font-weight:900;font-size:15px}
+  .flow{color:var(--brass)} .xpv{color:var(--aqua)} .lifebox{margin-left:auto;display:flex;gap:2px}
+  .drop{width:21px;height:21px;color:var(--drop)}
+  .drop.off{color:#CFDEE5}
+
+  .banner{margin:14px 14px 6px;border-radius:16px;padding:12px 16px;color:#fff;background:var(--aqua);box-shadow:0 4px 0 var(--aqua-dark)}
+  .banner .k{font-size:11px;font-weight:800;letter-spacing:.12em;opacity:.9}
+  .banner .t{font-size:19px;font-weight:800;margin-top:2px}
+
+  /* карта */
+  .well{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;position:relative}
+  .wrap{position:relative;padding:14px 0 40px}
+  .strata{position:absolute;left:0;right:0}
+  .strata .lb{position:absolute;left:12px;top:6px;font-size:10px;font-weight:800;letter-spacing:.08em;opacity:.65;text-transform:uppercase}
+  .casing{position:absolute;left:50%;top:0;bottom:0;width:92px;margin-left:-46px;background:rgba(255,255,255,.34);border-left:3px solid rgba(255,255,255,.7);border-right:3px solid rgba(255,255,255,.7)}
+  .nodes{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center}
+  .nw{display:flex;flex-direction:column;align-items:center;margin:13px 0}
+  .node{width:72px;height:72px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;
+    font-size:27px;color:#fff;background:var(--lock);box-shadow:0 6px 0 rgba(0,0,0,.13);position:relative}
+  .node.done{background:var(--spring);box-shadow:0 6px 0 var(--spring-dark)}
+  .node.available{background:var(--aqua);box-shadow:0 6px 0 var(--aqua-dark);cursor:pointer}
+  .node.available:active{transform:translateY(4px);box-shadow:0 2px 0 var(--aqua-dark)}
+  .node.locked{color:#7C93A0}
+  .cap{position:absolute;bottom:-13px;background:#fff;color:var(--aqua);font-size:11px;font-weight:800;padding:3px 11px;border-radius:20px;box-shadow:0 3px 0 var(--line);white-space:nowrap}
+  .nt{margin-top:8px;font-size:12px;font-weight:800;color:var(--ink);max-width:140px;text-align:center;line-height:1.25}
+  .l{transform:translateX(-44px)} .r{transform:translateX(44px)}
+
+  /* урок */
+  .ltop{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;flex:none}
+  .x{border:none;background:none;font-size:25px;color:#B7CAD3;padding:0 4px;line-height:1}
+  .pbar{flex:1;height:15px;border-radius:10px;background:#E4EDF1;overflow:hidden}
+  .pfill{height:100%;background:var(--aqua);border-radius:10px;transition:width .35s}
+  .qbody{flex:1;overflow-y:auto;padding:10px 20px 170px}
+  .kick{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--aqua);margin:6px 0 4px}
+  .qt{font-size:21px;font-weight:800;line-height:1.28;margin:0 0 8px}
+  .scen{background:#F2FAFD;border:2px solid #D5EBF4;border-radius:14px;padding:11px 13px;font-size:14px;font-weight:600;line-height:1.5;margin:8px 0}
+  .opts{display:flex;flex-direction:column;gap:11px;margin-top:12px}
+  .opt{display:flex;align-items:center;gap:11px;text-align:left;background:#fff;border:2px solid var(--line);border-bottom-width:4px;
+    border-radius:16px;padding:14px 15px;font:inherit;font-weight:700;font-size:15px;color:var(--ink);line-height:1.35}
+  .opt:active{transform:translateY(2px)}
+  .opt .key{width:25px;height:25px;flex:none;border-radius:8px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:var(--ink-soft)}
+  .opt.sel{border-color:var(--aqua);background:#EDF9FD}
+  .opt.right{border-color:var(--spring);background:#EAF9F0}
+  .opt.wrong{border-color:var(--coral);background:#FDEEEA}
+
+  .scene{margin:10px auto 0;max-width:320px}
+  .scene svg{width:100%;height:auto;display:block}
+  /* картиночная схема скважины */
+  .wellscene{position:relative;max-width:320px;margin:10px auto 0;line-height:0}
+  .well-bg{width:100%;border-radius:14px;border:2px solid var(--line);display:block}
+  .well-pump{position:absolute;transform:translate(-50%,-50%);z-index:2;pointer-events:none;transition:top .08s linear}
+  .well-green{position:absolute;left:14%;right:14%;background:rgba(56,193,115,.22);
+    border:1px dashed rgba(40,160,92,.6);border-radius:6px;z-index:1}
+  .well-riser{position:absolute;left:50%;transform:translateX(-50%);width:6px;background:#7E96A0;z-index:1;border-radius:3px}
+  .hot{position:absolute;transform:translate(-50%,-50%);background:transparent;border:none;
+    cursor:pointer;z-index:3;border-radius:12px;padding:0}
+  .hot.sel{background:rgba(34,167,224,.25);box-shadow:0 0 0 3px var(--aqua)}
+  .sstat{margin:11px auto 0;max-width:320px;text-align:center;font-weight:800;font-size:14px;padding:9px 12px;border-radius:12px}
+  .sstat.dry{background:#FDECE7;color:var(--coral-dark)}
+  .sstat.ok{background:#E7F8EF;color:var(--spring-dark)}
+  .sstat.sand{background:#FBF0DD;color:#9B6B18}
+  .sstat img.ico{width:16px;height:16px;vertical-align:-3px;margin-right:4px}
+  .rng{width:100%;max-width:320px;margin:14px auto 0;display:block;-webkit-appearance:none;height:20px;border-radius:12px;
+    background:linear-gradient(90deg,#F0603F 0 34%,#38C173 34% 66%,#D8A24A 66% 100%)}
+  .rng::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;border-radius:50%;background:#fff;border:4px solid var(--aqua)}
+  .hint{text-align:center;font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-top:9px}
+
+  .match{display:flex;gap:12px;margin-top:14px}
+  .mc{flex:1;display:flex;flex-direction:column;gap:9px}
+  .chip{background:#fff;border:2px solid var(--line);border-bottom-width:4px;border-radius:14px;padding:12px 10px;
+    font:inherit;font-weight:700;font-size:13px;line-height:1.3;color:var(--ink);min-height:62px;display:flex;align-items:center;justify-content:center;text-align:center}
+  .chip.sel{border-color:var(--aqua);background:#EDF9FD}
+  .chip.done{border-color:var(--spring);background:#EAF9F0;color:var(--spring-dark)}
+  .chip.miss{border-color:var(--coral);background:#FDEEEA}
+
+  .foot{position:absolute;left:0;right:0;bottom:0;padding:15px 20px calc(18px + env(safe-area-inset-bottom));background:#fff;border-top:2px solid var(--line);z-index:5}
+  .fb{transform:translateY(130%);transition:transform .3s cubic-bezier(.3,1.2,.5,1)}
+  .fb.show{transform:translateY(0)}
+  .fb.correct{background:#DFF6EA;border-top-color:#B7E7CC}
+  .fb.incorrect{background:#FCE7E1;border-top-color:#F5C6B8}
+  .fbh{display:flex;align-items:center;gap:11px;margin-bottom:7px}
+  .fbb{width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:900;flex:none}
+  .correct .fbb{color:var(--spring)} .incorrect .fbb{color:var(--coral)}
+  .fbt{font-size:18px;font-weight:800}
+  .correct .fbt{color:var(--spring-dark)} .incorrect .fbt{color:var(--coral-dark)}
+  .fbx{font-size:13.5px;font-weight:600;line-height:1.5;margin:0 0 11px}
+
+  .ov{position:absolute;inset:0;background:#EAF6FB;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px;text-align:center;gap:12px}
+  .speech{background:#fff;border:2px solid var(--line);border-radius:18px;padding:13px 17px;max-width:300px;font-weight:700;font-size:15px;line-height:1.45;position:relative}
+  .speech:after{content:"";position:absolute;bottom:-11px;left:50%;margin-left:-11px;border:11px solid transparent;border-top-color:#fff;border-bottom:0}
+  .acts{width:100%;max-width:300px;margin-top:20px;display:flex;flex-direction:column;gap:10px}
+  .cards{display:flex;gap:10px;width:100%;max-width:320px;margin-top:14px}
+  .sc{flex:1;border-radius:16px;padding:13px 6px;color:#fff;box-shadow:0 5px 0 rgba(0,0,0,.12)}
+  .sc .n{font-size:23px;font-weight:900} .sc .l2{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.9}
+  .sc1{background:var(--aqua)} .sc2{background:var(--brass)} .sc3{background:var(--spring)}
+  .mascot{width:130px;height:auto}
+  .mascot.sm{width:74px;height:auto}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  .bob{animation:bob 2.6s ease-in-out infinite}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+  .shake{animation:shake .32s}
+  .spin{width:34px;height:34px;border:4px solid var(--line);border-top-color:var(--aqua);border-radius:50%;animation:sp 1s linear infinite}
+
+  /* дневная цель */
+  .goal{margin:10px 14px 0;background:#fff;border:2px solid var(--line);border-radius:16px;padding:12px 14px}
+  .goalrow{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;margin-bottom:8px}
+  .goalrow .done{color:var(--spring-dark)}
+  .track{height:12px;border-radius:8px;background:#E4EDF1;overflow:hidden}
+  .fill{height:100%;border-radius:8px;background:var(--brass);transition:width .5s cubic-bezier(.4,1.2,.5,1)}
+  .fill.met{background:var(--spring)}
+  .goalset{display:flex;gap:7px;margin-top:10px}
+  .gbtn{flex:1;font:inherit;font-weight:800;font-size:13px;padding:8px 0;border-radius:11px;border:2px solid var(--line);background:#fff;color:var(--ink-soft)}
+  .gbtn.on{border-color:var(--aqua);background:#EDF9FD;color:var(--aqua)}
+
+  /* разбор ошибок */
+  .review{margin:10px 14px 0;border-radius:16px;padding:13px 15px;background:var(--coral);
+    color:#fff;box-shadow:0 4px 0 var(--coral-dark);display:flex;align-items:center;gap:12px;border:none;width:calc(100% - 28px);text-align:left}
+  .review:active{transform:translateY(3px);box-shadow:0 1px 0 var(--coral-dark)}
+  .review .rt{font-size:15px;font-weight:800}
+  .review .rs{font-size:12px;opacity:.9;margin-top:1px}
+  .review .ra{margin-left:auto;font-size:22px}
+
+  /* профиль */
+  .pbtn{border:none;background:none;font-size:22px;color:var(--ink-soft);padding:0 2px;line-height:1}
+  .prow{display:flex;justify-content:space-between;padding:13px 2px;border-bottom:1px solid var(--line);font-size:15px}
+  .prow b{font-weight:800}
+  .danger{color:var(--coral-dark)}
+
+  /* иконки: эмодзи и картинки выглядят одинаково */
+  .ico{display:inline-block;vertical-align:-2px;line-height:1}
+  img.ico{width:1.15em;height:1.15em;object-fit:contain}
+  .node img.ico{width:30px;height:30px}
+  .lifebox img.ico{width:21px;height:21px}
+  .lifebox img.ico.off{opacity:.28;filter:grayscale(1)}
+
+  /* картинка внутри вопроса */
+  .qimg{width:100%;max-width:340px;margin:10px auto 2px;display:block;
+    border-radius:14px;border:2px solid var(--line);background:#fff}
+  .prow .lbl{display:flex;align-items:center;gap:9px}
+  .prow img.ico{width:19px;height:19px;opacity:.85}
+  .btn img.ico{width:18px;height:18px;vertical-align:-3px;margin-right:7px}
+  .review img.ico{width:24px;height:24px;flex:none}
+  .sc img.ico{width:17px;height:17px;vertical-align:-2px}
+
+  /* «что лишнее» — плитки */
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:14px}
+  .tile{background:#fff;border:2px solid var(--line);border-bottom-width:4px;border-radius:16px;
+    padding:20px 14px;font:inherit;font-weight:800;font-size:15px;color:var(--ink);min-height:74px;
+    display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.3}
+  .tile:active{transform:translateY(2px)}
+  .tile.sel{border-color:var(--aqua);background:#EDF9FD}
+  .tile.right{border-color:var(--spring);background:#EAF9F0}
+  .tile.wrong{border-color:var(--coral);background:#FDEEEA}
+
+  /* «по порядку» */
+  .order{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+  .orow{display:flex;align-items:center;gap:11px;background:#fff;border:2px solid var(--line);
+    border-bottom-width:4px;border-radius:14px;padding:12px 13px}
+  .ohandle{width:26px;height:26px;flex:none;border-radius:8px;background:var(--aqua);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px}
+  .otext{flex:1;font-weight:700;font-size:14.5px;line-height:1.3}
+  .oarrows{display:flex;flex-direction:column;gap:3px}
+  .oup,.odn{border:none;background:#EDF3F6;color:var(--ink-soft);width:30px;height:20px;
+    border-radius:7px;font-size:11px;cursor:pointer;line-height:1}
+  .oup:active,.odn:active{background:var(--aqua);color:#fff}
+  .oup:disabled,.odn:disabled{opacity:.3}
+
+  /* ввод числа */
+  .numwrap{display:flex;align-items:center;justify-content:center;gap:10px;margin:22px 0 4px}
+  .numin{width:150px;text-align:center;font-size:30px;font-weight:900;padding:14px 10px;
+    border:2px solid var(--line);border-radius:16px;color:var(--ink)}
+  .numin:focus{outline:none;border-color:var(--aqua)}
+  .numin.right{border-color:var(--spring);background:#EAF9F0}
+  .numin.wrong{border-color:var(--coral);background:#FDEEEA}
+  .numunit{font-size:20px;font-weight:800;color:var(--ink-soft)}
+
+  /* горячие точки */
+  .hswrap{position:relative;max-width:340px;margin:12px auto 0;line-height:0}
+  .hsimg{width:100%;border-radius:14px;border:2px solid var(--line);display:block}
+  .spot{position:absolute;transform:translate(-50%,-50%);height:0;background:rgba(34,167,224,.25);
+    border:2.5px solid var(--aqua);border-radius:50%;cursor:pointer;padding:0;transition:.12s}
+  .spot:active{background:rgba(34,167,224,.45)}
+  .spot.sel{background:rgba(34,167,224,.5)}
+  .spot.right{background:rgba(56,193,115,.4);border-color:var(--spring)}
+  .spot.wrong{background:rgba(240,96,63,.4);border-color:var(--coral)}
+  .ach-head{margin:22px 0 10px;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+  .ach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .ach-badge{border:2px solid var(--line);border-radius:14px;padding:12px 6px;text-align:center;background:#fff}
+  .ach-badge.locked{opacity:.4;filter:grayscale(1)}
+  .ach-badge.earned{border-color:var(--aqua);background:#EDF9FD}
+  .ach-ic img.ico{width:26px;height:26px}
+  .ach-name{font-size:11px;font-weight:800;color:var(--ink);margin-top:5px;line-height:1.2}
+  .saved{background:#E6F1FB;color:#185FA5;border-radius:12px;padding:10px 14px;font-weight:800;font-size:14px;margin-top:6px;display:flex;align-items:center;gap:8px;justify-content:center}
+  .ach-won{margin-top:8px;background:#FBF5E4;border:2px solid #F0E0B0;border-radius:14px;padding:12px}
+  .ach-won-t{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#9B6B18;margin-bottom:8px}
+  .ach-won-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .ach-won .ach-badge{border-color:var(--brass);background:#fff;min-width:82px}
+  .sound{display:flex;justify-content:center;margin:16px 0 6px}
+  .playbtn{display:flex;align-items:center;gap:12px;background:var(--aqua);color:#fff;border:none;
+    border-radius:16px;padding:16px 26px;font:inherit;font-weight:800;font-size:16px;
+    box-shadow:0 5px 0 var(--aqua-dark);cursor:pointer}
+  .playbtn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--aqua-dark)}
+  .playbtn.playing{background:var(--aqua-dark)}
+  .ptri{width:0;height:0;border-left:18px solid #fff;border-top:11px solid transparent;border-bottom:11px solid transparent}
+
+  .node.gated{background:#CBD9E1;box-shadow:0 6px 0 #A9BEC9;cursor:pointer}
+  .node.gated:active{transform:translateY(4px);box-shadow:0 2px 0 #A9BEC9}
+  .cap.wait{background:#8FA6B2}
+  .nolives-pop{position:fixed;inset:0;background:rgba(12,58,76,.45);display:flex;align-items:center;
+    justify-content:center;z-index:60;padding:24px}
+  .nolives-card{background:#fff;border-radius:20px;padding:26px 22px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+  .nolives-drop img.ico{width:52px;height:52px}
+  .nolives-t{font-size:20px;font-weight:900;margin:10px 0 6px;color:var(--ink)}
+  .nolives-s{font-size:14px;line-height:1.5;color:var(--ink-soft);margin-bottom:18px}
+  .nolives-acts{display:flex;flex-direction:column;gap:10px}
+  .onb{min-height:100vh;display:flex;flex-direction:column;max-width:440px;margin:0 auto;padding:16px 22px}
+  .onb-top{height:34px;display:flex;justify-content:flex-end}
+  .onb-skip{background:none;border:none;color:var(--ink-soft);font:inherit;font-weight:700;font-size:14px;cursor:pointer;padding:6px}
+  .onb-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .onb-img{width:100%;max-width:300px;border-radius:18px;border:2px solid var(--line);margin-bottom:26px}
+  .onb-title{font-size:26px;font-weight:900;margin:0 0 12px;color:var(--ink)}
+  .onb-text{font-size:16px;line-height:1.55;color:var(--ink-soft);max-width:340px}
+  .onb-foot{padding:16px 0 8px}
+  .onb-dots{display:flex;gap:8px;justify-content:center;margin-bottom:16px}
+  .onb-dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
+  .onb-dot.on{background:var(--aqua);width:22px;border-radius:5px}
+  .authtabs{display:flex;background:#EAF0F5;border-radius:12px;padding:4px;gap:4px}
+  .atab{flex:1;border:none;background:transparent;padding:9px 0;border-radius:9px;font:inherit;
+    font-weight:800;font-size:14px;color:var(--ink-soft);cursor:pointer}
+  .atab.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  /* конфетти */
+  .confetti-box{position:absolute;inset:0;pointer-events:none;z-index:30;overflow:hidden}
+  .confetti-box i{position:absolute;top:-14px;width:10px;height:14px;border-radius:2px;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(115vh) rotate(720deg);opacity:.9}}
+  /* всплытие ачивки */
+  @keyframes pop-in{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+  .ach-won .ach-badge{animation:pop-in .5s cubic-bezier(.3,1.3,.5,1) both}
+  .ach-won .ach-badge:nth-child(2){animation-delay:.12s}
+  .ach-won .ach-badge:nth-child(3){animation-delay:.24s}
+  /* пульс текущего узла */
+  @keyframes node-pulse{0%,100%{box-shadow:0 6px 0 var(--aqua-dark),0 0 0 0 rgba(16,176,214,.45)}50%{box-shadow:0 6px 0 var(--aqua-dark),0 0 0 12px rgba(16,176,214,0)}}
+  .node.available{animation:node-pulse 2s ease-in-out infinite}
+  /* пузырьки на карте */
+  .bubbles{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+  .bubbles i{position:absolute;bottom:-20px;border-radius:50%;background:rgba(255,255,255,.35);animation:rise linear infinite}
+  @keyframes rise{to{transform:translateY(-120%);opacity:0}}
+  .qimg-cap{text-align:center;font-size:12px;color:var(--ink-soft);font-weight:700;margin-top:5px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+/* ================= НАСОСОЛИНГО — веб-клиент =================
+   Работает с настоящим API. Токены хранятся в localStorage.
+   Прогресс уходит на сервер с ключом идемпотентности.
+   ============================================================ */
+
+const API = location.origin;
+const root = document.getElementById('root');
+
+/* ============================================================
+   ИКОНКИ — меняются ТОЛЬКО здесь.
+   Можно оставить эмодзи, а можно указать путь к своему файлу:
+     xp: '/static/img/icons/icon-xp.png'
+   Файлы кладутся в папку web/img/ и доступны по /static/img/...
+   ============================================================ */
+const ICONS = {
+  // --- показатели ---
+  streak:    'icons/streak.svg',     // поток
+  xp:        'icons/xp.svg',         // опыт
+  life:      'icons/life.svg',       // капля-жизнь
+  lifeEmpty: 'icons/life-empty.svg', // потраченная капля
+  level:     'icons/level.svg',      // уровень
+  goal:      'icons/goal.svg',       // цель дня
+  accuracy:  'icons/accuracy.svg',   // точность
+  time:      'icons/time.svg',       // время
+
+  // --- узлы карты (белые: лежат на цветных кружках) ---
+  done:      'icons/done.svg',       // урок пройден
+  current:   'icons/current.svg',    // текущий урок
+  locked:    'icons/locked.svg',     // урок закрыт
+
+  // --- обратная связь ---
+  ok:        'icons/ok.svg',         // верный ответ
+  fail:      'icons/fail.svg',       // неверный ответ
+  warn:      'icons/warn.svg',       // предупреждение
+
+  // --- навигация ---
+  close:     'icons/close.svg',      // закрыть
+  back:      'icons/back.svg',       // назад
+  arrow:     'icons/arrow.svg',      // стрелка вперёд
+  menu:      'icons/menu.svg',       // профиль
+
+  // --- разделы и действия ---
+  review:    'icons/review.svg',     // разбор ошибок
+  lesson:    'icons/lesson.svg',     // урок
+  user:      'icons/user.svg',       // профиль
+  export:    'icons/export.svg',     // выгрузка данных
+  logout:    'icons/logout.svg',     // выход
+  delete:    'icons/delete.svg',     // удаление аккаунта
+};
+
+const IMG_RE = /\.(png|jpe?g|svg|webp|gif)$/i;
+
+function imgUrl(v){
+  if(!v) return '';
+  // Полный путь оставляем как есть, короткое имя ищем в /static/img/
+  return /^(https?:|\/)/.test(v) ? v : '/static/img/' + v;
+}
+
+/** Отрисовать иконку: эмодзи или картинку — вызывающему коду всё равно. */
+function ico(name, cls){
+  const v = ICONS[name];
+  if(!v) return '';
+  const c = 'ico ' + (cls || '');
+  return IMG_RE.test(v)
+    ? `<img class="${c}" src="${imgUrl(v)}" alt="">`
+    : `<span class="${c}">${v}</span>`;
+}
+
+const store = {
+  get access(){ return localStorage.getItem('access') },
+  get refresh(){ return localStorage.getItem('refresh') },
+  set(a, r){ localStorage.setItem('access', a); if(r) localStorage.setItem('refresh', r) },
+  clear(){ localStorage.removeItem('access'); localStorage.removeItem('refresh') },
+};
+
+
+
+/* ============================================================
+   ЗВУК. Короткие эффекты синтезируются в браузере (Web Audio) —
+   без файлов, работает офлайн. Настройка «звук вкл/выкл» в localStorage.
+   ============================================================ */
+const SFX = {
+  on: localStorage.getItem('sfx') !== 'off',
+  ctx: null,
+  _ac(){ if(!this.ctx){ try{ this.ctx = new (window.AudioContext||window.webkitAudioContext)(); }catch(_){} } return this.ctx; },
+  toggle(){ this.on = !this.on; localStorage.setItem('sfx', this.on ? 'on' : 'off'); if(this.on) this.play('click'); },
+  // одна нота
+  _note(freq, start, dur, type='sine', gain=0.18){
+    const ac = this._ac(); if(!ac) return;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = freq;
+    o.connect(g); g.connect(ac.destination);
+    const t = ac.currentTime + start;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.start(t); o.stop(t + dur + 0.02);
+  },
+  play(kind){
+    if(!this.on) return;
+    const ac = this._ac(); if(!ac) return;
+    if(ac.state === 'suspended') ac.resume();
+    switch(kind){
+      case 'correct':                       // короткий восходящий «дзынь»
+        this._note(660, 0, 0.12, 'sine'); this._note(880, 0.08, 0.16, 'sine'); break;
+      case 'wrong':                         // мягкий нисходящий «бз»
+        this._note(200, 0, 0.18, 'square', 0.12); this._note(150, 0.1, 0.2, 'square', 0.1); break;
+      case 'complete':                      // аккорд-фанфара
+        [523, 659, 784].forEach((f,i)=>this._note(f, i*0.09, 0.4, 'triangle', 0.16)); break;
+      case 'achievement':                   // яркий перезвон
+        [784, 988, 1319].forEach((f,i)=>this._note(f, i*0.07, 0.5, 'sine', 0.15)); break;
+      case 'levelup':
+        [523, 659, 784, 1047].forEach((f,i)=>this._note(f, i*0.08, 0.35, 'triangle', 0.16)); break;
+      case 'click':
+        this._note(440, 0, 0.05, 'sine', 0.1); break;
+    }
+  }
+};
+
+
+/* ---------- анимации ---------- */
+function confetti(){
+  const colors = ['#10B0D6','#38C173','#E3A130','#F0603F','#22A7E0'];
+  const box = document.createElement('div');
+  box.className = 'confetti-box';
+  for(let i = 0; i < 40; i++){
+    const p = document.createElement('i');
+    p.style.left = Math.random()*100 + '%';
+    p.style.background = colors[i % colors.length];
+    p.style.animationDelay = (Math.random()*0.3) + 's';
+    p.style.animationDuration = (1.6 + Math.random()*1.2) + 's';
+    p.style.transform = `rotate(${Math.random()*360}deg)`;
+    box.appendChild(p);
+  }
+  document.getElementById('root').appendChild(box);
+  setTimeout(()=>box.remove(), 3200);
+}
+
+function countUp(el, to, ms=900){
+  if(!el) return;
+  const start = performance.now();
+  function step(now){
+    const t = Math.min(1, (now - start)/ms);
+    const eased = 1 - Math.pow(1 - t, 3);        // плавное замедление
+    el.textContent = '+' + Math.round(to * eased);
+    if(t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ---------- сеть ---------- */
+async function api(path, {method='GET', body=null, auth=true, retry=true} = {}){
+  const headers = {};
+  if(body) headers['Content-Type'] = 'application/json';
+  if(auth && store.access) headers['Authorization'] = 'Bearer ' + store.access;
+
+  const res = await fetch(API + path, {method, headers, body: body ? JSON.stringify(body) : null});
+
+  if(res.status === 401 && auth && retry && store.refresh){
+    const ok = await tryRefresh();
+    if(ok) return api(path, {method, body, auth, retry:false});
+    store.clear(); renderLogin('Сессия истекла, войдите снова'); throw new Error('unauthorized');
+  }
+  if(res.status === 204) return null;
+
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok){
+    const e = new Error((data.error && data.error.message) || 'Ошибка запроса');
+    e.code = data.error && data.error.code;
+    throw e;
+  }
+  return data;
+}
+
+async function tryRefresh(){
+  try{
+    const res = await fetch(API + '/api/v1/auth/refresh', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({refresh_token: store.refresh})
+    });
+    if(!res.ok) return false;
+    const d = await res.json();
+    store.set(d.access_token, d.refresh_token);
+    return true;
+  }catch(_){ return false }
+}
+
+/* ---------- маскот ---------- */
+/* ---------- маскот (картинки по настроению) ---------- */
+// 4 файла в web/img/mascot/. Хочешь одного маскота без настроений —
+// укажи один и тот же файл во всех строках.
+const MASCOT = {
+  happy:   'mascot/happy.png',
+  neutral: 'mascot/neutral.png',
+  worried: 'mascot/worried.png',
+  party:   'mascot/party.png',
+};
+
+function mascot(mood, cls){
+  const src = MASCOT[mood] || MASCOT.happy;
+  return `<img class="mascot ${cls||''}" src="${imgUrl(src)}" alt="Тритон, арт. 3363">`;
+}
+
+const DROP = `<svg class="drop" viewBox="0 0 24 24"><path d="M12 2S4.5 11 4.5 15.5a7.5 7.5 0 0 0 15 0C19.5 11 12 2 12 2z" fill="currentColor"/></svg>`;
+
+/* ---------- экраны ---------- */
+function renderLoading(msg){
+  root.innerHTML = `<div class="center pad"><div class="spin"></div><div class="muted">${msg||'Загружаю…'}</div></div>`;
+}
+
+/* ---------- приветствие (онбординг) ---------- */
+// Слайды: картинка-заглушка (заменяется файлом с тем же именем в web/img/onboard/),
+// заголовок и текст. Показывается после регистрации; повторить можно из профиля.
+const ONBOARD = [
+  {img:'onboard/welcome.jpg',  title:'Насосолинго',
+   text:'Тренажёр для монтажников. Учись подбирать и ставить насосы в игре, а не на объекте методом проб.'},
+  {img:'onboard/lessons.jpg',  title:'Короткие уроки',
+   text:'Спускайся по скважине вглубь. Задания разные: посчитай напор, найди ошибку на схеме, собери порядок монтажа.'},
+  {img:'onboard/progress.jpg', title:'Расти и не бросай',
+   text:'Копи опыт, держи поток по дням, разбирай ошибки. Капли — твои попытки: кончились — повтори завалленное и иди дальше.'},
+  {img:'onboard/goal.jpg',     title:'Стань мастером',
+   text:'Пройди курс от устройства насоса до диагностики. Впереди — статус и признание среди своих.'},
+];
+
+function startOnboarding(){ renderOnboarding(0); }
+
+function renderOnboarding(i){
+  const s = ONBOARD[i];
+  const last = i === ONBOARD.length - 1;
+  root.innerHTML = `
+    <div class="onb">
+      <div class="onb-top">
+        <button class="onb-skip" id="skip">${last ? '' : 'Пропустить'}</button>
+      </div>
+      <div class="onb-body">
+        <img class="onb-img" src="${imgUrl(s.img)}" alt="">
+        <h1 class="onb-title">${s.title}</h1>
+        <div class="onb-text">${s.text}</div>
+      </div>
+      <div class="onb-foot">
+        <div class="onb-dots">${ONBOARD.map((_,k)=>
+          `<span class="onb-dot ${k===i?'on':''}"></span>`).join('')}</div>
+        <button class="btn" id="next">${last ? 'Начать' : 'Далее'}</button>
+      </div>
+    </div>`;
+  const finish = () => loadMap();
+  document.getElementById('skip').onclick = finish;
+  document.getElementById('next').onclick = () => last ? finish() : renderOnboarding(i + 1);
+}
+
+function renderLogin(opts){
+  // opts: {err, mode: 'login'|'register', email}
+  opts = opts || {};
+  const mode = opts.mode === 'register' ? 'register' : 'login';
+  const reg = mode === 'register';
+  const email = opts.email || '';
+  root.innerHTML = `
+    <div class="center pad">
+      ${mascot('happy','bob')}
+      <h1>Насосолинго</h1>
+      <div class="muted">Учись подбирать и ставить насосы<br>так, чтобы не переделывать</div>
+      <div style="width:100%;max-width:320px;margin-top:16px">
+        <div class="authtabs">
+          <button class="atab ${!reg?'on':''}" data-m="login">Войти</button>
+          <button class="atab ${reg?'on':''}" data-m="register">Регистрация</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:11px;margin-top:12px">
+          ${opts.err ? `<div class="err">${opts.err}</div>` : ''}
+          ${reg ? `
+            <input id="em" type="email" placeholder="E-mail" autocapitalize="none" autocomplete="email" value="${email}">
+            <input id="pw" type="password" placeholder="Пароль (от 10 символов)" autocomplete="new-password">
+            <input id="pw2" type="password" placeholder="Повторите пароль" autocomplete="new-password">
+            <button class="btn" id="go">Создать аккаунт</button>
+            <div class="muted" style="font-size:12.5px">Регистрируясь, ты создаёшь аккаунт для сохранения прогресса.</div>
+          ` : `
+            <input id="lg" placeholder="Логин или e-mail" autocapitalize="none" autocomplete="username" value="${email}">
+            <input id="pw" type="password" placeholder="Пароль" autocomplete="current-password">
+            <button class="btn" id="go">Войти</button>
+          `}
+        </div>
+      </div>
+    </div>`;
+
+  root.querySelectorAll('.atab').forEach(t =>
+    t.onclick = () => renderLogin({mode: t.dataset.m, email: (document.getElementById('em')||document.getElementById('lg')||{}).value || ''}));
+
+  const go = document.getElementById('go');
+
+  const submitLogin = async () => {
+    const login = document.getElementById('lg').value.trim();
+    const password = document.getElementById('pw').value;
+    if(!login || !password) return renderLogin({mode:'login', err:'Заполните оба поля', email:login});
+    go.disabled = true; go.textContent = 'Вхожу…';
+    try{
+      const d = await api('/api/v1/auth/login', {method:'POST', auth:false, body:{login, password}});
+      store.set(d.access_token, d.refresh_token);
+      loadMap();
+    }catch(e){
+      renderLogin({mode:'login', err: e.message || 'Не удалось войти', email:login});
+    }
+  };
+
+  const submitRegister = async () => {
+    const em = document.getElementById('em').value.trim();
+    const password = document.getElementById('pw').value;
+    const pw2 = document.getElementById('pw2').value;
+    if(!em || !password) return renderLogin({mode:'register', err:'Заполните e-mail и пароль', email:em});
+    if(password.length < 10) return renderLogin({mode:'register', err:'Пароль должен быть не короче 10 символов', email:em});
+    if(password !== pw2) return renderLogin({mode:'register', err:'Пароли не совпадают', email:em});
+    go.disabled = true; go.textContent = 'Создаю…';
+    try{
+      const d = await api('/api/v1/auth/register', {method:'POST', auth:false, body:{email: em, password}});
+      store.set(d.access_token, d.refresh_token);
+      startOnboarding();
+    }catch(e){
+      renderLogin({mode:'register', err: e.message || 'Не удалось зарегистрироваться', email:em});
+    }
+  };
+
+  const submit = reg ? submitRegister : submitLogin;
+  go.onclick = submit;
+  const last = document.getElementById(reg ? 'pw2' : 'pw');
+  if(last) last.onkeydown = e => { if(e.key === 'Enter') submit() };
+}
+
+let MAP = null;
+
+async function loadMap(){
+  renderLoading('Открываю скважину…');
+  try{
+    MAP = await api('/api/v1/game/courses');
+    renderMap();
+  }catch(e){
+    if(e.message === 'unauthorized') return;
+    root.innerHTML = `<div class="center pad"><div class="err">${e.message}</div>
+      <button class="btn ghost" onclick="location.reload()">Ещё раз</button></div>`;
+  }
+}
+
+function renderMap(){
+  const st = MAP.state;
+  const nolives = (st.lives || 0) <= 0;   // мягкий лимит капель
+  const course = MAP.courses[0];
+  if(!course){
+    root.innerHTML = `<div class="center pad"><div class="err">Уроков нет. Запустите seed.py на сервере.</div></div>`;
+    return;
+  }
+  const lessons = [];
+  course.units.forEach(u => u.lessons.forEach(l => lessons.push({...l, unit: u.title})));
+
+  const H = 118;
+  const total = Math.max(lessons.length * H + 90, 380);
+  const bands = [
+    {t:0, h:total*0.10, c:'#EAF6FB', lb:''},
+    {t:total*0.10, h:total*0.22, c:'var(--soil1)', lb:'Чернозём'},
+    {t:total*0.32, h:total*0.22, c:'var(--soil2)', lb:'Глина'},
+    {t:total*0.54, h:total*0.14, c:'var(--sand)', lb:'Песок'},
+    {t:total*0.68, h:total*0.32, c:'var(--water)', lb:'Водоносный слой'},
+  ];
+
+  const drops = Array.from({length: st.max_lives}, (_,i) => {
+    const full = i < st.lives;
+    if(!IMG_RE.test(ICONS.life))
+      return DROP.replace('class="drop"', `class="drop ${full?'':'off'}"`);
+    return ico(full ? 'life' : 'lifeEmpty');
+  }).join('');
+
+  const pct = Math.min(100, Math.round(st.daily_xp / Math.max(1, st.daily_goal_xp) * 100));
+  const nextTimer = st.seconds_to_next_life != null
+    ? `<div class="hint" style="margin:6px 0 0">Следующая капля через ${Math.ceil(st.seconds_to_next_life/60)} мин</div>` : '';
+
+  root.innerHTML = `
+    <div class="topbar">
+      <span class="stat flow">${ico('streak')} ${st.streak_count}</span>
+      ${st.streak_freezes ? `<span class="stat" style="color:#5C7C8A;font-size:13px" title="Заморозки потока">❄ ${st.streak_freezes}</span>` : ''}
+      <span class="stat xpv">${ico('xp')} ${st.xp}</span>
+      <span class="lifebox">${drops}</span>
+      <button class="pbtn" id="prof" aria-label="Профиль">${ico('menu')}</button>
+    </div>
+    <div class="banner">
+      <div class="k">Уровень ${st.level}${st.xp_to_next_level!=null?` · до следующего ${st.xp_to_next_level}`:''}</div>
+      <div class="t">${course.title}</div>
+    </div>
+    ${nextTimer}
+    <div class="goal">
+      <div class="goalrow">
+        <span>Цель дня</span>
+        <span class="${st.daily_goal_met?'done':''}">${st.daily_xp} / ${st.daily_goal_xp} ${ico('xp')}${st.daily_goal_met?' '+ico('ok'):''}</span>
+      </div>
+      <div class="track"><div class="fill ${st.daily_goal_met?'met':''}" style="width:${pct}%"></div></div>
+      <div class="goalset">
+        ${[10,20,40,70].map(g=>`<button class="gbtn ${g===st.daily_goal_xp?'on':''}" data-goal="${g}">${g}</button>`).join('')}
+      </div>
+    </div>
+    ${st.review_pending ? `<button class="review" id="rev">
+        ${ico('review')}
+        <span>
+          <div class="rt">Разбор ошибок</div>
+          <div class="rs">${st.review_pending} ${plural(st.review_pending,'вопрос','вопроса','вопросов')} ждёт повторения</div>
+        </span><span class="ra">${ico('arrow')}</span></button>` : ''}
+    <!-- nolives-флаг вычислен ниже --><div class="well"><div class="wrap" style="min-height:${total}px">
+      ${bands.map(b=>`<div class="strata" style="top:${b.t}px;height:${b.h}px;background:${b.c}">
+        ${b.lb?`<div class="lb">${b.lb}</div>`:''}</div>`).join('')}
+      <div class="casing"></div>
+      <div class="bubbles" id="bubbles"></div>
+      <div class="nodes">
+        ${lessons.map((l,i)=>{
+          // мягкий лимит: на 0 капель новый (не пройденный) урок «ждёт»
+          const gated = nolives && l.status === 'available';
+          const icon = ico(l.status==='done' ? 'done' : gated ? 'locked' : l.status==='available' ? 'current' : 'locked');
+          const side = i%2===0 ? 'l' : 'r';
+          const cap = (l.status==='available' && !gated) ? `<span class="cap">Продолжить</span>`
+                    : gated ? `<span class="cap wait">нужна капля</span>` : '';
+          const cls = gated ? 'gated' : l.status;
+          return `<div class="nw">
+            <button class="node ${cls} ${side}" data-id="${l.id}" data-st="${l.status}"
+              data-gated="${gated?1:0}" aria-label="${l.title}">${icon}${cap}</button>
+            <div class="nt ${side}">${l.title}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div></div>`;
+
+  // пузырьки поднимаются в нижней (водоносной) части карты
+  const bb = document.getElementById('bubbles');
+  if(bb){
+    for(let i = 0; i < 14; i++){
+      const b = document.createElement('i');
+      const sz = 4 + Math.random()*10;
+      b.style.width = b.style.height = sz + 'px';
+      b.style.left = Math.random()*100 + '%';
+      b.style.bottom = Math.random()*40 + '%';
+      b.style.animationDuration = (5 + Math.random()*7) + 's';
+      b.style.animationDelay = (Math.random()*6) + 's';
+      bb.appendChild(b);
+    }
+  }
+
+  root.querySelectorAll('.node').forEach(n => {
+    if(n.dataset.gated === '1'){
+      n.onclick = () => noLivesPrompt(st);
+    } else if(n.dataset.st === 'available' || n.dataset.st === 'done'){
+      n.onclick = () => startLesson(n.dataset.id);
+    }
+  });
+  const rev = document.getElementById('rev');
+  if(rev) rev.onclick = startReview;
+  document.getElementById('prof').onclick = renderProfile;
+  root.querySelectorAll('.gbtn').forEach(b => b.onclick = async () => {
+    try{
+      await api('/api/v1/game/daily-goal', {method:'PUT', body:{daily_goal_xp: +b.dataset.goal}});
+      loadMap();
+    }catch(e){ alert(e.message) }
+  });
+}
+
+function shuffle(a){
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function plural(n, one, few, many){
+  const a = Math.abs(n) % 100, b = a % 10;
+  if(a > 10 && a < 20) return many;
+  if(b > 1 && b < 5) return few;
+  if(b === 1) return one;
+  return many;
+}
+
+/* ---------- урок ---------- */
+let L = null;
+
+function noLivesPrompt(st){
+  const mins = st.seconds_to_next ? Math.ceil(st.seconds_to_next/60) : null;
+  const wait = mins ? `Новая капля через ~${mins} мин.` : '';
+  const hasReview = (st.review_pending || 0) > 0;
+  root.querySelectorAll('.nolives-pop').forEach(x=>x.remove());
+  const pop = document.createElement('div');
+  pop.className = 'nolives-pop';
+  pop.innerHTML = `
+    <div class="nolives-card">
+      <div class="nolives-drop">${ico('lifeEmpty')}</div>
+      <div class="nolives-t">Капли кончились</div>
+      <div class="nolives-s">Новые уроки подождут. ${wait}
+        ${hasReview ? 'А пока разбери ошибки — за разбор вернётся капля.' : 'Капли восстанавливаются со временем.'}</div>
+      <div class="nolives-acts">
+        ${hasReview ? '<button class="btn green" id="nl-rev">Разобрать ошибки</button>' : ''}
+        <button class="btn ghost" id="nl-close">Понятно</button>
+      </div>
+    </div>`;
+  document.getElementById('root').appendChild(pop);
+  const rv = document.getElementById('nl-rev');
+  if(rv) rv.onclick = () => { pop.remove(); startReview(); };
+  document.getElementById('nl-close').onclick = () => pop.remove();
+  pop.onclick = (e) => { if(e.target === pop) pop.remove(); };
+}
+
+async function startLesson(id){
+  renderLoading('Готовлю урок…');
+  try{
+    const lesson = await api('/api/v1/game/lessons/' + id);
+    L = {
+      id, lesson,
+      qs: lesson.content.questions || [],
+      i: 0, correct: 0, mistakes: 0, answers: [],
+      eventId: 'w-' + Date.now() + '-' + Math.random().toString(36).slice(2,8),
+      started: Date.now(),
+    };
+    if(!L.qs.length){ alert('В уроке нет вопросов'); return loadMap(); }
+    renderQuestion();
+  }catch(e){
+    if(e.message !== 'unauthorized') { alert(e.message); loadMap(); }
+  }
+}
+
+let CHECK = null;
+
+function renderQuestion(){
+  const q = L.mode === 'review' ? L.qs[L.i].question : L.qs[L.i];
+  const pct = (L.i / L.qs.length) * 100;
+  root.innerHTML = `
+    <div class="ltop">
+      <button class="x" id="quit" aria-label="Выйти">${ico('close')}</button>
+      <div class="pbar"><div class="pfill" style="width:${pct}%"></div></div>
+      <span class="stat" style="color:var(--ink-soft);font-size:13px">${L.i + 1}/${L.qs.length}</span>
+    </div>
+    <div class="qbody" id="qb">
+      <div class="kick">${L.mode === 'review' ? 'Повторение · ' + (L.qs[L.i].lesson_title || '') : (q.kicker || '')}</div>
+      <h2 class="qt">${q.prompt || ''}</h2>
+      ${q.scenario ? `<div class="scen">${q.scenario}</div>` : ''}
+      ${q.image ? `<img class="qimg" src="${imgUrl(q.image)}" alt="${q.image_alt || ''}">
+                  ${q.image_caption ? `<div class="qimg-cap">${q.image_caption}</div>` : ''}` : ''}
+      <div id="zone"></div>
+    </div>
+    <div class="foot" id="mainfoot"><button class="btn" id="chk" disabled>Проверить</button></div>
+    <div class="foot fb" id="fb">
+      <div class="fbh"><div class="fbb" id="fbb"></div><div class="fbt" id="fbt"></div></div>
+      <p class="fbx" id="fbx"></p>
+      <button class="btn" id="cont">Продолжить</button>
+    </div>`;
+
+  document.getElementById('quit').onclick = () => loadMap();
+  document.getElementById('chk').onclick = () => { if(CHECK) showFeedback(CHECK()) };
+  document.getElementById('cont').onclick = nextQuestion;
+
+  const zone = document.getElementById('zone');
+  ({mc: renderMC, tap: renderTap, slider: renderSlider, match: renderMatch,
+    odd: renderOdd, order: renderOrder, number: renderNumber, hotspots: renderHotspots,
+    sound: renderSound}[q.type] || renderUnknown)(zone, q);
+}
+
+function enableCheck(on){ const b = document.getElementById('chk'); if(b) b.disabled = !on }
+
+function renderUnknown(zone, q){
+  zone.innerHTML = `<div class="err">Тип задания «${q.type}» пока не поддерживается клиентом.</div>`;
+  enableCheck(true);
+  CHECK = () => ({correct:true, text:'Пропускаем.'});
+}
+
+function renderMC(zone, q){
+  let sel = null, locked = false;
+  const keys = ['А','Б','В','Г','Д'];
+  zone.innerHTML = `<div class="opts">${q.options.map((o,i)=>
+    `<button class="opt" data-i="${i}"><span class="key">${keys[i]}</span><span>${o}</span></button>`).join('')}</div>`;
+  const opts = [...zone.querySelectorAll('.opt')];
+  opts.forEach(el => el.onclick = () => {
+    if(locked) return;
+    sel = +el.dataset.i;
+    opts.forEach(o => o.classList.toggle('sel', +o.dataset.i === sel));
+    enableCheck(true);
+  });
+  CHECK = () => {
+    locked = true;
+    const ok = sel === q.answer;
+    opts.forEach(o => {
+      const i = +o.dataset.i;
+      o.classList.remove('sel');
+      if(i === q.answer) o.classList.add('right');
+      else if(i === sel) o.classList.add('wrong');
+    });
+    const errs = q.explain_err || [];
+    return {correct: ok, text: ok ? q.explain_ok : (errs[sel] || 'Не тот вариант.')};
+  };
+}
+
+/* ---------- схема скважины: общий конфиг ----------
+   Фон и насос — картинки (web/img/well/). Интерактивные зоны и позиция насоса
+   заданы в процентах от сцены — если заменишь фон и объекты съедут, поправь
+   проценты здесь. Насос вынесен отдельной картинкой, потому что двигается
+   (в ползунке) и подсвечивается (в «найди ошибку»). */
+const WELL = {
+  bg:   'well/bg.jpg',
+  pump: 'well/pump.png',
+  headY: 7,          // оголовок (центр, % сверху)
+  levelY: 40,        // динамический уровень воды
+  pumpTapY: 66,      // где стоит насос в задании «найди ошибку»
+  sliderMin: 42,     // верх хода ползунка (у воды)
+  sliderMax: 88,     // низ хода (у дна)
+  pumpW: 20,         // ширина картинки насоса, % от сцены
+};
+
+function renderTap(zone, q){
+  let sel = null, locked = false;
+  const W = WELL;
+  zone.innerHTML = `
+  <div class="wellscene">
+    <img class="well-bg" src="${imgUrl(W.bg)}" alt="">
+    <img class="well-pump" style="left:50%;top:${W.pumpTapY}%;width:${W.pumpW}%" src="${imgUrl(W.pump)}" alt="">
+    <button class="hot" data-z="head" style="left:50%;top:${W.headY}%;width:26%;height:12%" aria-label="оголовок"></button>
+    <button class="hot" data-z="level" style="left:50%;top:${W.levelY}%;width:74%;height:9%" aria-label="уровень воды"></button>
+    <button class="hot" data-z="pump" style="left:50%;top:${W.pumpTapY}%;width:26%;height:17%" aria-label="насос"></button>
+  </div>
+  <div class="hint">${q.hint || 'Тапни по проблемному месту'}</div>`;
+
+  const hots = [...zone.querySelectorAll('.hot')];
+  hots.forEach(el => el.onclick = () => {
+    if(locked) return;
+    sel = el.dataset.z;
+    hots.forEach(h => h.classList.toggle('sel', h.dataset.z === sel));
+    enableCheck(true);
+  });
+  CHECK = () => {
+    locked = true;
+    const ok = sel === q.answer;
+    return {correct: ok, text: ok ? q.explain_ok : q.explain_err};
+  };
+}
+
+function renderSlider(zone, q){
+  const gz = q.green_zone || [42, 82];
+  const W = WELL;
+  const yFor = v => W.sliderMin + (v / 100) * (W.sliderMax - W.sliderMin);  // % центра насоса
+  const gTop = yFor(gz[0]), gBot = yFor(gz[1]);
+  zone.innerHTML = `
+  <div class="wellscene">
+    <img class="well-bg" src="${imgUrl(W.bg)}" alt="">
+    <div class="well-green" style="top:${gTop}%;height:${gBot - gTop}%"></div>
+    <div class="well-riser" id="riser" style="top:${W.headY}%;height:0"></div>
+    <img class="well-pump" id="mp" style="left:50%;top:${yFor(6)}%;width:${W.pumpW}%" src="${imgUrl(W.pump)}" alt="">
+  </div>
+  <div class="sstat ok" id="ss">Тяни ползунок вниз</div>
+  <input class="rng" id="rg" type="range" min="0" max="100" value="6" aria-label="Глубина подвеса">
+  <div class="hint">${q.hint || ''}</div>`;
+
+  const rg = document.getElementById('rg'), ss = document.getElementById('ss');
+  const mp = document.getElementById('mp'), riser = document.getElementById('riser');
+  const upd = () => {
+    const v = +rg.value, y = yFor(v);
+    mp.style.top = y + '%';
+    riser.style.height = Math.max(0, y - W.headY) + '%';
+    let c, m;
+    // Иконка вставляется разметкой, а не текстом — иначе путь к файлу
+    // отрисовался бы буквами.
+    if(v < gz[0]){ c='dry'; m=ico('warn')+' Сухой ход — насос выше воды' }
+    else if(v > gz[1]){ c='sand'; m=ico('warn')+' Хватает песок со дна' }
+    else { c='ok'; m=ico('ok')+' В воде и выше дна' }
+    ss.className = 'sstat ' + c; ss.innerHTML = m;
+    enableCheck(true);
+  };
+  rg.oninput = upd; upd();
+
+  CHECK = () => {
+    const v = +rg.value;
+    const ok = v >= gz[0] && v <= gz[1];
+    let text = q.explain_ok;
+    if(!ok) text = v < gz[0] ? (q.explain_low || 'Слишком высоко.') : (q.explain_high || 'Слишком низко.');
+    return {correct: ok, text};
+  };
+}
+
+function renderMatch(zone, q){
+  const pairs = q.pairs || [];
+  const left = pairs.map((p,i)=>({t:p.left, id:i}));
+  const right = pairs.map((p,i)=>({t:p.right, id:i})).sort(()=>Math.random()-0.5);
+  zone.innerHTML = `
+    <div class="match">
+      <div class="mc">${left.map(o=>`<button class="chip" data-s="L" data-id="${o.id}">${o.t}</button>`).join('')}</div>
+      <div class="mc">${right.map(o=>`<button class="chip" data-s="R" data-id="${o.id}">${o.t}</button>`).join('')}</div>
+    </div>
+    <div class="hint" id="mh">Тапни симптом, потом причину</div>`;
+
+  let sel = null, done = 0;
+  const chips = [...zone.querySelectorAll('.chip')];
+  chips.forEach(ch => ch.onclick = () => {
+    if(ch.classList.contains('done')) return;
+    if(!sel){ sel = ch; ch.classList.add('sel'); return }
+    if(ch === sel){ sel.classList.remove('sel'); sel = null; return }
+    if(ch.dataset.s === sel.dataset.s){ sel.classList.remove('sel'); sel = ch; ch.classList.add('sel'); return }
+    if(ch.dataset.id === sel.dataset.id){
+      ch.classList.add('done'); sel.classList.add('done');
+      sel.classList.remove('sel'); sel = null; done++;
+      if(done === pairs.length){
+        document.getElementById('mh').textContent = 'Готово';
+        showFeedback({correct:true, text:q.explain_ok});
+      }
+    } else {
+      const a = ch, b = sel; sel.classList.remove('sel'); sel = null;
+      [a,b].forEach(c => { c.classList.add('miss'); setTimeout(()=>c.classList.remove('miss'), 340) });
+    }
+  });
+  document.getElementById('chk').style.display = 'none';
+  CHECK = () => ({correct:true, text:q.explain_ok});
+}
+
+
+/* ---------- «Что лишнее» ---------- */
+function renderOdd(zone, q){
+  // Плитки; одна не вписывается в ряд. answer — индекс лишней.
+  let sel = null, locked = false;
+  zone.innerHTML = `<div class="tiles">${q.items.map((it,i)=>
+    `<button class="tile" data-i="${i}">${it}</button>`).join('')}</div>`;
+  const tiles = [...zone.querySelectorAll('.tile')];
+  tiles.forEach(el => el.onclick = () => {
+    if(locked) return;
+    sel = +el.dataset.i;
+    tiles.forEach(t => t.classList.toggle('sel', +t.dataset.i === sel));
+    enableCheck(true);
+  });
+  CHECK = () => {
+    locked = true;
+    const ok = sel === q.answer;
+    tiles.forEach(t => {
+      const i = +t.dataset.i;
+      t.classList.remove('sel');
+      if(i === q.answer) t.classList.add('right');
+      else if(i === sel) t.classList.add('wrong');
+    });
+    return {correct: ok, text: ok ? q.explain_ok : (q.explain_err || 'Лишнее — другое.')};
+  };
+}
+
+/* ---------- «Расставь по порядку» ---------- */
+function renderOrder(zone, q){
+  // Строки можно двигать вверх/вниз. Правильный порядок — как в q.items.
+  // Показываем перемешанными, сверяем с исходным.
+  const correct = q.items.map((t,i)=>({t, id:i}));
+  let cur = shuffle(correct.slice());
+  // не начинать с уже правильного порядка
+  if(cur.every((x,i)=>x.id===i)) cur = shuffle(correct.slice());
+
+  function draw(){
+    zone.innerHTML = `<div class="order">${cur.map((x,i)=>`
+      <div class="orow">
+        <span class="ohandle">${i+1}</span>
+        <span class="otext">${x.t}</span>
+        <span class="oarrows">
+          <button class="oup" data-i="${i}" ${i===0?'disabled':''} aria-label="Вверх">▲</button>
+          <button class="odn" data-i="${i}" ${i===cur.length-1?'disabled':''} aria-label="Вниз">▼</button>
+        </span>
+      </div>`).join('')}</div>
+      <div class="hint">${q.hint || 'Расставь в правильном порядке'}</div>`;
+    zone.querySelectorAll('.oup').forEach(b => b.onclick = () => move(+b.dataset.i, -1));
+    zone.querySelectorAll('.odn').forEach(b => b.onclick = () => move(+b.dataset.i, +1));
+  }
+  function move(i, d){
+    const j = i + d;
+    [cur[i], cur[j]] = [cur[j], cur[i]];
+    draw();
+    enableCheck(true);
+  }
+  draw();
+  enableCheck(true);   // порядок можно проверить сразу
+
+  CHECK = () => {
+    const ok = cur.every((x,i) => x.id === i);
+    return {correct: ok, text: ok ? q.explain_ok
+      : (q.explain_err || 'Порядок не тот. Правильно: ' + correct.map(x=>x.t).join(' → '))};
+  };
+}
+
+/* ---------- Ввод числа ---------- */
+function renderNumber(zone, q){
+  // answer — правильное число; tolerance — допустимое отклонение (по умолчанию 0).
+  zone.innerHTML = `
+    <div class="numwrap">
+      <input class="numin" id="nin" inputmode="decimal" placeholder="?"
+             autocomplete="off">
+      ${q.unit ? `<span class="numunit">${q.unit}</span>` : ''}
+    </div>
+    <div class="hint">${q.hint || 'Введи число'}</div>`;
+  const inp = document.getElementById('nin');
+  inp.oninput = () => enableCheck(inp.value.trim() !== '');
+  inp.onkeydown = e => { if(e.key === 'Enter' && CHECK && inp.value.trim()) document.getElementById('chk').click(); };
+  setTimeout(() => inp.focus(), 100);
+
+  CHECK = () => {
+    const raw = inp.value.replace(',', '.').trim();
+    const val = parseFloat(raw);
+    const tol = q.tolerance || 0;
+    const ok = !isNaN(val) && Math.abs(val - q.answer) <= tol;
+    inp.classList.add(ok ? 'right' : 'wrong');
+    const shown = q.answer + (q.unit ? ' ' + q.unit : '');
+    return {correct: ok, text: ok ? q.explain_ok
+      : (q.explain_err || `Правильный ответ: ${shown}`)};
+  };
+}
+
+/* ---------- Горячие точки на картинке ---------- */
+function renderHotspots(zone, q){
+  // На картинке размечены зоны в процентах: {x,y,r,label,correct}.
+  // Игрок тапает нужную. Универсальная замена «найди на схеме» для любого изображения.
+  let sel = null, locked = false;
+  zone.innerHTML = `
+    <div class="hswrap">
+      <img class="hsimg" src="${imgUrl(q.image)}" alt="${q.image_alt || ''}">
+      ${q.spots.map((sp,i)=>`
+        <button class="spot" data-i="${i}"
+          style="left:${sp.x}%;top:${sp.y}%;width:${(sp.r||8)*2}%;padding-bottom:${(sp.r||8)*2}%"
+          aria-label="${sp.label || 'точка'}"></button>`).join('')}
+    </div>
+    <div class="hint">${q.hint || 'Нажми на нужное место'}</div>`;
+  const spots = [...zone.querySelectorAll('.spot')];
+  spots.forEach(el => el.onclick = () => {
+    if(locked) return;
+    sel = +el.dataset.i;
+    spots.forEach(x => x.classList.toggle('sel', +x.dataset.i === sel));
+    enableCheck(true);
+  });
+  CHECK = () => {
+    locked = true;
+    const ok = sel != null && q.spots[sel] && q.spots[sel].correct === true;
+    spots.forEach((x,i) => {
+      x.classList.remove('sel');
+      if(q.spots[i].correct) x.classList.add('right');
+      else if(i === sel) x.classList.add('wrong');
+    });
+    return {correct: ok, text: ok ? q.explain_ok : (q.explain_err || 'Не то место.')};
+  };
+}
+
+
+/* ---------- Звуковое задание ---------- */
+function renderSound(zone, q){
+  // Проигрываем звук, игрок выбирает, что за неисправность.
+  // audio — файл из web/img/audio/ (короткое имя резолвится в /static/img/audio/).
+  let sel = null, locked = false;
+  const keys = ['А','Б','В','Г','Д'];
+  const src = /^(https?:|\/)/.test(q.audio) ? q.audio : '/static/img/audio/' + q.audio;
+  zone.innerHTML = `
+    <div class="sound">
+      <button class="playbtn" id="play" type="button" aria-label="Прослушать">
+        <span class="ptri"></span><span class="ptxt">Прослушать</span>
+      </button>
+      <audio id="aud" src="${src}" preload="auto"></audio>
+    </div>
+    <div class="opts">${q.options.map((o,i)=>
+      `<button class="opt" data-i="${i}"><span class="key">${keys[i]}</span><span>${o}</span></button>`).join('')}</div>`;
+
+  const aud = document.getElementById('aud');
+  const play = document.getElementById('play');
+  play.onclick = () => {
+    try{ aud.currentTime = 0; aud.play(); play.classList.add('playing');
+      setTimeout(()=>play.classList.remove('playing'), 600); }catch(_){}
+  };
+
+  const opts = [...zone.querySelectorAll('.opt')];
+  opts.forEach(el => el.onclick = () => {
+    if(locked) return;
+    sel = +el.dataset.i;
+    opts.forEach(o => o.classList.toggle('sel', +o.dataset.i === sel));
+    enableCheck(true);
+  });
+  CHECK = () => {
+    locked = true;
+    const ok = sel === q.answer;
+    opts.forEach(o => {
+      const i = +o.dataset.i; o.classList.remove('sel');
+      if(i === q.answer) o.classList.add('right');
+      else if(i === sel) o.classList.add('wrong');
+    });
+    const errs = q.explain_err || [];
+    return {correct: ok, text: ok ? q.explain_ok : (errs[sel] || 'Не тот звук.')};
+  };
+}
+
+function showFeedback(res){
+  SFX.play(res.correct ? 'correct' : 'wrong');
+  // Запоминаем результат по конкретному вопросу — из этого строится разбор ошибок.
+  const q = (L.mode === 'review' ? L.qs[L.i].question : L.qs[L.i]) || {};
+  if(q.id && !L.answers.some(a => a.question_id === q.id)){
+    L.answers.push({question_id: q.id, correct: !!res.correct});
+  }
+  const fb = document.getElementById('fb');
+  document.getElementById('mainfoot').style.transform = 'translateY(130%)';
+  if(res.correct){ L.correct++ } else {
+    L.mistakes++;
+    const b = document.getElementById('qb');
+    b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake');
+  }
+  fb.className = 'foot fb show ' + (res.correct ? 'correct' : 'incorrect');
+  document.getElementById('fbb').innerHTML = ico(res.correct ? 'ok' : 'fail');
+  document.getElementById('fbt').textContent = res.correct ? 'Верно!' : 'Не совсем';
+  document.getElementById('fbx').textContent = res.text || '';
+}
+
+function nextQuestion(){
+  L.i++;
+  if(L.i >= L.qs.length) return L.mode === 'review' ? finishReview() : finishLesson();
+  renderQuestion();
+}
+
+async function finishLesson(){
+  renderLoading('Отправляю результат…');
+  try{
+    const d = await api(`/api/v1/game/lessons/${L.id}/complete`, {method:'POST', body:{
+      client_event_id: L.eventId,
+      correct: L.correct,
+      total: L.qs.length,
+      mistakes: L.mistakes,
+      duration_seconds: Math.round((Date.now() - L.started)/1000),
+      answers: L.answers,
+    }});
+    renderResult(d);
+  }catch(e){
+    if(e.message === 'unauthorized') return;
+    root.innerHTML = `<div class="center pad"><div class="err">${e.message}</div>
+      <button class="btn" onclick="loadMap()">К карте</button></div>`;
+  }
+}
+
+function rewardsBlock(d){
+  let html = '';
+  if(d.streak_saved)
+    html += `<div class="saved">${ico('streak')} Заморозка спасла твой поток!</div>`;
+  if(d.new_achievements && d.new_achievements.length){
+    html += `<div class="ach-won">
+      <div class="ach-won-t">Новые достижения</div>
+      <div class="ach-won-row">${d.new_achievements.map(a=>`
+        <div class="ach-badge earned" title="${a.desc}">
+          <div class="ach-ic">${ico(a.icon)}</div>
+          <div class="ach-name">${a.title}</div>
+        </div>`).join('')}</div></div>`;
+  }
+  return html;
+}
+
+function renderResult(d){
+  SFX.play('complete');
+  const perfectRun = L.mistakes === 0;
+  if(perfectRun || (d.new_achievements && d.new_achievements.length)) setTimeout(confetti, 150);
+  if(d.new_achievements && d.new_achievements.length) setTimeout(()=>SFX.play('achievement'), 500);
+  const perfect = L.mistakes === 0;
+  const acc = Math.round(L.correct / L.qs.length * 100);
+  root.innerHTML = `
+    <div class="ov">
+      ${mascot(perfect ? 'party' : 'happy','bob')}
+      <h1>Урок пройден</h1>
+      <div class="speech">${perfect
+        ? 'Ни одной ошибки. Чистая работа, монтажник.'
+        : 'Есть над чем поработать, но насос повешен правильно.'}</div>
+      <div class="cards">
+        <div class="sc sc1"><div class="n" id="xpn">+0</div><div class="l2">Опыт</div></div>
+        <div class="sc sc2"><div class="n">${acc}%</div><div class="l2">Точность</div></div>
+        <div class="sc sc3"><div class="n">${d.state.streak_count}</div><div class="l2">Поток</div></div>
+      </div>
+      ${rewardsBlock(d)}
+      ${d.duplicate ? `<div class="hint">Этот результат уже был учтён раньше</div>` : ''}
+      <div class="acts">
+        <button class="btn green" id="back">Забрать награду</button>
+      </div>
+    </div>`;
+  countUp(document.getElementById('xpn'), d.xp_awarded);
+  document.getElementById('back').onclick = loadMap;
+}
+
+/* ---------- разбор ошибок ---------- */
+
+async function startReview(){
+  renderLoading('Собираю твои ошибки…');
+  try{
+    const d = await api('/api/v1/game/review');
+    if(!d.questions.length){ alert('Ошибок для разбора нет'); return loadMap() }
+    L = {
+      mode: 'review', qs: d.questions, i: 0, correct: 0, mistakes: 0, answers: [],
+      eventId: 'r-' + Date.now() + '-' + Math.random().toString(36).slice(2,8),
+      started: Date.now(),
+    };
+    renderQuestion();
+  }catch(e){
+    if(e.message !== 'unauthorized'){ alert(e.message); loadMap() }
+  }
+}
+
+async function finishReview(){
+  renderLoading('Сохраняю разбор…');
+  try{
+    const d = await api('/api/v1/game/review/complete', {method:'POST', body:{
+      client_event_id: L.eventId,
+      answers: L.answers,
+      duration_seconds: Math.round((Date.now() - L.started)/1000),
+    }});
+    SFX.play('complete');
+    if(d.new_achievements && d.new_achievements.length) setTimeout(()=>SFX.play('achievement'), 500);
+    if(d.resolved === L.qs.length || (d.new_achievements && d.new_achievements.length)) setTimeout(confetti, 150);
+    root.innerHTML = `
+      <div class="ov">
+        ${mascot(d.resolved === L.qs.length ? 'party' : 'happy','bob')}
+        <h1>Разбор пройден</h1>
+        <div class="speech">${d.resolved === L.qs.length
+          ? 'Все ошибки закрыты. Вот это работа над собой.'
+          : `Исправлено ${d.resolved} из ${L.qs.length}. Остальное повторим позже.`}</div>
+        <div class="cards">
+          <div class="sc sc1"><div class="n">+${d.xp_awarded}</div><div class="l2">Опыт</div></div>
+          <div class="sc sc3"><div class="n">${d.resolved}</div><div class="l2">Исправлено</div></div>
+          <div class="sc sc2"><div class="n">${d.still_pending}</div><div class="l2">Осталось</div></div>
+        </div>
+        ${rewardsBlock(d)}
+        <div class="acts"><button class="btn green" id="back">К карте</button></div>
+      </div>`;
+    document.getElementById('back').onclick = loadMap;
+  }catch(e){
+    if(e.message !== 'unauthorized'){ alert(e.message); loadMap() }
+  }
+}
+
+/* ---------- профиль ---------- */
+
+async function renderProfile(){
+  renderLoading('Загружаю профиль…');
+  let me, st, ach;
+  try{
+    me = await api('/api/v1/auth/me');
+    st = await api('/api/v1/game/state');
+    ach = await api('/api/v1/game/achievements');
+  }catch(e){ if(e.message !== 'unauthorized') { alert(e.message); loadMap() } return }
+
+  root.innerHTML = `
+    <div class="ltop">
+      <button class="x" id="back" aria-label="Назад">${ico('back')}</button>
+      <div style="flex:1;font-weight:800;font-size:17px">Профиль</div>
+    </div>
+    <div class="qbody" style="padding-bottom:40px">
+      <div style="text-align:center;margin:6px 0 14px">${mascot('neutral','sm')}</div>
+      <div class="prow"><span class="lbl">${ico('user')}Кто</span><b>${me.user.username || me.user.email}</b></div>
+      <div class="prow"><span class="lbl">${ico('level')}Уровень</span><b>${st.level}</b></div>
+      <div class="prow"><span class="lbl">${ico('xp')}Опыт</span><b>${st.xp}</b></div>
+      <div class="prow"><span class="lbl">${ico('streak')}Поток</span><b>${st.streak_count}</b></div>
+      <div class="prow"><span class="lbl">${ico('goal')}Цель дня</span><b>${st.daily_xp} / ${st.daily_goal_xp}</b></div>
+      <div class="prow"><span class="lbl">${ico('review')}Ждёт разбора</span><b>${st.review_pending}</b></div>
+      <div class="prow"><span class="lbl">${ico('streak')}Заморозки потока</span><b>${st.streak_freezes} ❄</b></div>
+
+      <div class="ach-head">Достижения · ${ach.earned_count} из ${ach.total}</div>
+      <div class="ach-grid">${ach.achievements.map(a=>`
+        <div class="ach-badge ${a.earned?'earned':'locked'}" title="${a.desc}">
+          <div class="ach-ic">${ico(a.icon)}</div>
+          <div class="ach-name">${a.title}</div>
+        </div>`).join('')}</div>
+
+      <div style="margin-top:22px;display:flex;flex-direction:column;gap:10px">
+        <button class="btn ghost" id="how">Как играть</button>
+        <button class="btn ghost" id="snd">${SFX.on ? '🔊 Звук включён' : '🔇 Звук выключен'}</button>
+        <button class="btn ghost" id="exp">${ico('export')}Скачать мои данные</button>
+        <button class="btn ghost" id="out">${ico('logout')}Выйти</button>
+        <button class="btn coral" id="del" style="background:var(--coral);box-shadow:0 5px 0 var(--coral-dark)">${ico('delete')}Удалить аккаунт</button>
+      </div>
+      <div class="hint" style="margin-top:12px">Удаление необратимо: пропадут прогресс, опыт и поток.</div>
+    </div>`;
+
+  document.getElementById('back').onclick = loadMap;
+
+  document.getElementById('how').onclick = startOnboarding;
+  document.getElementById('snd').onclick = () => { SFX.toggle(); renderProfile(); };
+  document.getElementById('exp').onclick = async () => {
+    try{
+      const d = await api('/api/v1/auth/me/export');
+      const url = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], {type:'application/json'}));
+      const a = document.createElement('a');
+      a.href = url; a.download = 'nasosolingo-my-data.json'; a.click();
+      URL.revokeObjectURL(url);
+    }catch(e){ alert(e.message) }
+  };
+
+  document.getElementById('out').onclick = async () => {
+    try{ await api('/api/v1/auth/logout', {method:'POST', body:{refresh_token: store.refresh}}) }catch(_){}
+    store.clear(); renderLogin();
+  };
+
+  document.getElementById('del').onclick = renderDeleteConfirm;
+}
+
+function renderDeleteConfirm(){
+  root.innerHTML = `
+    <div class="ltop"><button class="x" id="back" aria-label="Назад">${ico('back')}</button>
+      <div style="flex:1;font-weight:800;font-size:17px">Удаление аккаунта</div></div>
+    <div class="qbody">
+      <div style="text-align:center;margin:8px 0 12px">${mascot('worried','sm')}</div>
+      <div class="err" style="margin-bottom:14px">
+        Это необратимо. Будут удалены профиль, весь прогресс, опыт, поток и история ответов.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:11px">
+        <input id="dpw" type="password" placeholder="Ваш пароль" autocomplete="current-password">
+        <input id="dcf" placeholder='Напишите УДАЛИТЬ' autocapitalize="characters">
+        <div id="derr"></div>
+        <button class="btn" id="go" style="background:var(--coral);box-shadow:0 5px 0 var(--coral-dark)">Удалить навсегда</button>
+        <button class="btn ghost" id="cancel">Отмена</button>
+      </div>
+    </div>`;
+
+  document.getElementById('back').onclick = renderProfile;
+  document.getElementById('cancel').onclick = renderProfile;
+  document.getElementById('go').onclick = async () => {
+    const password = document.getElementById('dpw').value;
+    const confirm = document.getElementById('dcf').value;
+    const box = document.getElementById('derr');
+    box.innerHTML = '';
+    try{
+      await api('/api/v1/auth/me', {method:'DELETE', body:{password, confirm}});
+      store.clear();
+      root.innerHTML = `<div class="center pad"><h1>Аккаунт удалён</h1>
+        <div class="muted">Все данные стёрты. Спасибо, что заглядывал.</div>
+        <div class="acts"><button class="btn" onclick="location.reload()">На главную</button></div></div>`;
+    }catch(e){
+      box.innerHTML = `<div class="err">${e.message}</div>`;
+    }
+  };
+}
+
+/* ---------- старт ---------- */
+if(store.access) loadMap(); else renderLogin();
+</script>
+</body>
+</html>

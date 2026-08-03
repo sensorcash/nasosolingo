@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Аналитика — Насосолинго</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:#E9F4F9;color:#0C3A4C;margin:0;padding:24px}
+  .wrap{max-width:900px;margin:0 auto}
+  h1{font-size:24px;margin:0 0 4px}
+  .sub{color:#5C7C8A;font-size:14px;margin-bottom:20px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+  .card{background:#fff;border:2px solid #DCEAF0;border-radius:14px;padding:16px}
+  .card .n{font-size:28px;font-weight:900;color:#10B0D6}
+  .card .l{font-size:12px;color:#5C7C8A;font-weight:700;margin-top:2px}
+  h2{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#5C7C8A;margin:26px 0 10px}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:2px solid #DCEAF0}
+  th,td{text-align:left;padding:10px 12px;font-size:14px;border-bottom:1px solid #EAF0F5}
+  th{background:#F2FAFD;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#5C7C8A}
+  tr:last-child td{border-bottom:none}
+  .bar{height:8px;background:#EAF0F5;border-radius:5px;overflow:hidden}
+  .bar i{display:block;height:100%;background:#10B0D6;border-radius:5px}
+  .rate{font-weight:800}
+  .rate.hi{color:#CE4327} .rate.mid{color:#9B6B18} .rate.lo{color:#28A05C}
+  .err{background:#FDEEEA;color:#8F3320;border-radius:12px;padding:14px;font-weight:600}
+  .spark{display:flex;gap:3px;align-items:flex-end;height:60px;background:#fff;border:2px solid #DCEAF0;border-radius:12px;padding:12px}
+  .spark i{flex:1;background:#10B0D6;border-radius:3px 3px 0 0;min-height:2px}
+  .muted{color:#5C7C8A;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Аналитика</h1>
+  <div class="sub">Где спотыкаются, докуда доходят, кто активен</div>
+  <div id="content"><div class="muted">Загружаю…</div></div>
+</div>
+<script>
+const token = localStorage.getItem('access');
+const C = document.getElementById('content');
+
+async function load(){
+  if(!token){ C.innerHTML = '<div class="err">Сначала войдите в приложение (/app) под админским аккаунтом.</div>'; return; }
+  let r;
+  try{ r = await fetch('/api/v1/admin/analytics', {headers:{Authorization:'Bearer '+token}}); }
+  catch(e){ C.innerHTML = '<div class="err">Ошибка сети</div>'; return; }
+  if(r.status === 403){ C.innerHTML = '<div class="err">Этот аккаунт не в списке администраторов (admin_emails в .env).</div>'; return; }
+  if(r.status === 401){ C.innerHTML = '<div class="err">Сессия истекла. Войдите в /app заново.</div>'; return; }
+  if(!r.ok){ C.innerHTML = '<div class="err">Не удалось загрузить данные</div>'; return; }
+  render(await r.json());
+}
+
+function rateClass(x){ return x >= 0.5 ? 'hi' : x >= 0.3 ? 'mid' : 'lo'; }
+
+function render(d){
+  const o = d.overview;
+  const maxFunnel = Math.max(1, ...d.funnel.map(f=>f.players_completed));
+  const maxAct = Math.max(1, ...d.daily_activity.map(a=>a.events));
+
+  C.innerHTML = `
+    <div class="cards">
+      <div class="card"><div class="n">${o.total_users}</div><div class="l">Пользователей</div></div>
+      <div class="card"><div class="n">${o.active_7d}</div><div class="l">Активны за 7 дней</div></div>
+      <div class="card"><div class="n">${o.lesson_completions}</div><div class="l">Прохождений уроков</div></div>
+      <div class="card"><div class="n">${o.total_xp_awarded}</div><div class="l">Опыта начислено</div></div>
+    </div>
+
+    <h2>Активность по дням</h2>
+    <div class="spark">${d.daily_activity.map(a=>
+      `<i style="height:${Math.round(a.events/maxAct*100)}%" title="${a.date}: ${a.events}"></i>`).join('')}</div>
+
+    <h2>Воронка: докуда доходят</h2>
+    <table><thead><tr><th>Урок</th><th>Юнит</th><th style="width:35%">Прошли</th></tr></thead><tbody>
+      ${d.funnel.map(f=>`<tr>
+        <td>${f.lesson}</td><td class="muted">${f.unit}</td>
+        <td><div class="bar"><i style="width:${Math.round(f.players_completed/maxFunnel*100)}%"></i></div>
+          <span class="muted">${f.players_completed}</span></td>
+      </tr>`).join('')}
+    </tbody></table>
+
+    <h2>Самые сложные вопросы</h2>
+    ${d.hardest_questions.length ? `<table>
+      <thead><tr><th>Вопрос</th><th>Урок</th><th>Попыток</th><th>Ошибок</th><th>% ошибок</th></tr></thead><tbody>
+      ${d.hardest_questions.map(q=>`<tr>
+        <td>${q.question}</td><td class="muted">${q.lesson}</td>
+        <td>${q.attempts}</td><td>${q.wrong}</td>
+        <td class="rate ${rateClass(q.wrong_rate)}">${Math.round(q.wrong_rate*100)}%</td>
+      </tr>`).join('')}
+    </tbody></table>` : '<div class="muted">Пока мало данных — вопросы появятся, когда игроки начнут отвечать.</div>'}
+  `;
+}
+load();
+</script>
+</body>
+</html>

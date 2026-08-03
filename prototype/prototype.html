@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Насосолинго · Aquario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800;900&display=swap&subset=cyrillic,cyrillic-ext,latin" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0C3A4C; --ink-soft:#5C7C8A;
+    --aqua:#10B0D6; --aqua-dark:#0B85A4;
+    --spring:#38C173; --spring-dark:#28A05C;
+    --coral:#F0603F; --coral-dark:#CE4327;
+    --drop:#22A7E0;
+    --brass:#E3A130;
+    --bg:#E9F4F9; --card:#FFFFFF; --line:#DCEAF0;
+    --lock:#B9CBD4;
+    --soil1:#CBA574; --soil2:#B0894F; --soil3:#DAC488; --rock:#93A6B0;
+    --water:#37A6DE;
+    --shadow:0 8px 24px rgba(12,58,76,.14);
+    --f-disp:'Fredoka','Nunito',system-ui,sans-serif;
+    --f-body:'Nunito',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--f-body);
+    background:
+      radial-gradient(120% 80% at 50% -10%, #F4FBFE 0%, var(--bg) 55%, #DCEEF5 100%);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    padding:18px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- phone frame ---------- */
+  .phone{
+    width:100%;max-width:430px;
+    height:min(860px,94vh);
+    background:var(--card);
+    border-radius:34px;
+    box-shadow:var(--shadow), 0 0 0 8px #fff, 0 0 0 10px #CFE3EC;
+    overflow:hidden;position:relative;
+    display:flex;flex-direction:column;
+  }
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;animation:fade .28s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* ---------- generic buttons ---------- */
+  .btn{
+    font-family:var(--f-body);font-weight:800;font-size:16px;letter-spacing:.02em;
+    border:none;border-radius:16px;padding:15px 18px;width:100%;
+    color:#fff;background:var(--aqua);
+    box-shadow:0 5px 0 var(--aqua-dark);
+    cursor:pointer;transition:transform .05s, box-shadow .05s, background .15s, opacity .15s;
+    text-transform:uppercase;
+  }
+  .btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--aqua-dark)}
+  .btn.green{background:var(--spring);box-shadow:0 5px 0 var(--spring-dark)}
+  .btn.coral{background:var(--coral);box-shadow:0 5px 0 var(--coral-dark)}
+  .btn.ghost{background:#fff;color:var(--aqua);box-shadow:0 0 0 2px var(--line) inset;font-weight:800}
+  .btn:disabled{background:#E4EDF1;color:#A9BEC8;box-shadow:0 5px 0 #D2E0E7;cursor:not-allowed}
+  .btn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+
+  /* ================= PATH SCREEN ================= */
+  .topbar{
+    display:flex;align-items:center;gap:14px;
+    padding:14px 18px;border-bottom:2px solid var(--line);background:#fff;z-index:3;
+  }
+  .stat{display:flex;align-items:center;gap:6px;font-weight:900;font-size:16px}
+  .stat .ico{width:24px;height:24px;display:grid;place-items:center}
+  .stat.flow{color:var(--brass)} .stat.xp{color:var(--aqua)} .stat.life{color:var(--drop);margin-left:auto}
+  .drops{display:flex;gap:2px}
+  .drops svg{width:22px;height:22px}
+  .drop-empty{opacity:.28;filter:grayscale(1)}
+
+  .unit-banner{
+    margin:16px 16px 8px;border-radius:18px;padding:14px 18px;color:#fff;
+    background:linear-gradient(100deg,var(--aqua),#0C97BC);
+    box-shadow:0 5px 0 var(--aqua-dark);
+    display:flex;flex-direction:column;gap:2px;position:relative;overflow:hidden;
+  }
+  .unit-banner .eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;opacity:.85}
+  .unit-banner .uname{font-family:var(--f-disp);font-size:21px;font-weight:600}
+  .unit-banner .wave{position:absolute;right:-10px;bottom:-18px;font-size:74px;opacity:.16}
+
+  .well{flex:1;overflow-y:auto;position:relative;padding:6px 0 30px}
+  .well-inner{position:relative;width:100%;min-height:640px}
+  /* strata bands drawn as full-width layers behind the borehole */
+  .strata{position:absolute;left:0;right:0;overflow:hidden}
+  .strata .lbl{position:absolute;left:12px;font-size:10px;font-weight:800;letter-spacing:.1em;
+    color:rgba(12,58,76,.5);text-transform:uppercase;top:6px}
+  .depth{position:absolute;right:12px;font-size:11px;font-weight:800;color:var(--ink-soft)}
+  /* the casing pipe down the middle */
+  .casing{position:absolute;left:50%;top:0;bottom:0;width:96px;transform:translateX(-50%);
+    background:linear-gradient(90deg, rgba(255,255,255,.5), rgba(255,255,255,.18) 50%, rgba(255,255,255,.5));
+    border-left:3px solid rgba(255,255,255,.7);border-right:3px solid rgba(255,255,255,.7)}
+
+  .nodes{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;padding-top:14px}
+  .node-wrap{position:relative;margin:15px 0;display:flex;flex-direction:column;align-items:center}
+  .node{
+    width:74px;height:74px;border-radius:50%;
+    display:grid;place-items:center;cursor:default;border:none;
+    background:var(--lock);box-shadow:0 6px 0 rgba(0,0,0,.12);
+    font-size:30px;position:relative;
+  }
+  .node.done{background:var(--spring);box-shadow:0 6px 0 var(--spring-dark);color:#fff}
+  .node.current{background:var(--aqua);box-shadow:0 6px 0 var(--aqua-dark);color:#fff;cursor:pointer}
+  .node.current::after{content:"";position:absolute;inset:-8px;border-radius:50%;
+    border:4px solid var(--aqua);opacity:.5;animation:ring 1.6s ease-out infinite}
+  @keyframes ring{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.35);opacity:0}}
+  .node.current:active{transform:translateY(4px);box-shadow:0 2px 0 var(--aqua-dark)}
+  .node .cap{font-family:var(--f-disp);font-weight:700;font-size:13px;position:absolute;bottom:-24px;
+    background:#fff;color:var(--aqua);padding:3px 12px;border-radius:20px;box-shadow:0 3px 0 var(--line);white-space:nowrap}
+  .node-title{margin-top:6px;font-size:12px;font-weight:800;color:var(--ink-soft);max-width:130px;text-align:center}
+  .node.current + .node-title{color:var(--ink)}
+  .off-l{transform:translateX(-46px)} .off-r{transform:translateX(46px)}
+
+  .pump-marker{width:44px;height:70px;margin-top:20px;filter:drop-shadow(0 4px 6px rgba(12,58,76,.3))}
+
+  /* ================= LESSON SCREEN ================= */
+  .lesson-top{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;z-index:3}
+  .xclose{border:none;background:none;font-size:26px;color:#B7CAD3;cursor:pointer;line-height:1;padding:0 4px;font-weight:700}
+  .xclose:hover{color:var(--coral)}
+  .pbar{flex:1;height:16px;border-radius:10px;background:#E4EDF1;overflow:hidden;position:relative}
+  .pfill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:10px;
+    background:linear-gradient(90deg,var(--aqua),#3FCBEE);transition:width .4s cubic-bezier(.4,1.2,.5,1)}
+  .pfill::after{content:"";position:absolute;top:3px;left:8px;right:8px;height:4px;border-radius:4px;background:rgba(255,255,255,.45)}
+  .life-mini{display:flex;align-items:center;gap:4px;font-weight:900;color:var(--drop);font-size:16px}
+  .life-mini svg{width:24px;height:24px}
+
+  .qbody{flex:1;overflow-y:auto;padding:8px 20px 150px;display:flex;flex-direction:column}
+  .qkicker{font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--aqua);margin:6px 0 4px}
+  .qtext{font-family:var(--f-disp);font-weight:600;font-size:22px;line-height:1.25;margin:0 0 6px;color:var(--ink)}
+  .scenario{background:#F2FAFD;border:2px solid #D5EBF4;border-radius:14px;padding:12px 14px;margin:10px 0 4px;
+    font-size:14px;font-weight:600;color:var(--ink);line-height:1.5}
+  .scenario b{color:var(--aqua-dark)}
+
+  /* option cards */
+  .opts{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+  .opt{
+    display:flex;align-items:center;gap:12px;text-align:left;
+    background:#fff;border:2px solid var(--line);border-bottom-width:4px;border-radius:16px;
+    padding:15px 16px;font-family:var(--f-body);font-weight:700;font-size:15px;color:var(--ink);
+    cursor:pointer;transition:transform .05s,border-color .1s,background .1s;line-height:1.35;
+  }
+  .opt:active{transform:translateY(2px)}
+  .opt .key{width:26px;height:26px;flex:none;border-radius:8px;border:2px solid var(--line);
+    display:grid;place-items:center;font-weight:900;font-size:13px;color:var(--ink-soft)}
+  .opt.sel{border-color:var(--aqua);background:#EDF9FD}
+  .opt.sel .key{border-color:var(--aqua);color:var(--aqua);background:#fff}
+  .opt.right{border-color:var(--spring);background:#EAF9F0}
+  .opt.right .key{border-color:var(--spring);color:var(--spring);background:#fff}
+  .opt.wrong{border-color:var(--coral);background:#FDEEEA}
+  .opt.wrong .key{border-color:var(--coral);color:var(--coral);background:#fff}
+  .opt:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+  .opt[disabled]{cursor:default}
+
+  /* tap-error scene + slider well share the .scene */
+  .scene{margin:12px auto 0;width:100%;max-width:320px}
+  .scene svg{width:100%;height:auto;display:block}
+  .hot{cursor:pointer}
+  .hot .halo{opacity:0;transition:opacity .15s}
+  .hot:hover .halo{opacity:.5}
+  .hot.sel .halo{opacity:1}
+  .tap-hint{text-align:center;font-size:13px;font-weight:700;color:var(--ink-soft);margin-top:10px}
+
+  .slider-status{margin:12px auto 0;max-width:320px;text-align:center;font-weight:800;font-size:15px;
+    padding:10px 12px;border-radius:12px;transition:.15s}
+  .slider-status.dry{background:#FDECE7;color:var(--coral-dark)}
+  .slider-status.ok{background:#E7F8EF;color:var(--spring-dark)}
+  .slider-status.sand{background:#FBF0DD;color:#9B6B18}
+  .depth-slider{width:100%;max-width:320px;margin:16px auto 0;display:block;-webkit-appearance:none;
+    height:22px;border-radius:12px;background:linear-gradient(90deg,#F0603F 0 34%,#38C173 34% 66%,#D8A24A 66% 100%);
+    outline:none}
+  .depth-slider::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;border-radius:50%;
+    background:#fff;border:4px solid var(--aqua);box-shadow:0 3px 8px rgba(12,58,76,.35);cursor:grab}
+  .depth-slider::-moz-range-thumb{width:34px;height:34px;border-radius:50%;background:#fff;
+    border:4px solid var(--aqua);box-shadow:0 3px 8px rgba(12,58,76,.35);cursor:grab}
+  .depth-slider:focus-visible{box-shadow:0 0 0 3px var(--ink)}
+  .slider-hint{text-align:center;font-size:12px;color:var(--ink-soft);margin-top:8px;font-weight:700}
+
+  /* matching */
+  .match{display:flex;gap:14px;margin-top:16px}
+  .mcol{flex:1;display:flex;flex-direction:column;gap:10px}
+  .chip{background:#fff;border:2px solid var(--line);border-bottom-width:4px;border-radius:14px;
+    padding:13px 12px;font-weight:700;font-size:13.5px;line-height:1.3;color:var(--ink);cursor:pointer;
+    text-align:center;transition:transform .05s,border-color .1s,background .1s;min-height:64px;
+    display:flex;align-items:center;justify-content:center}
+  .chip:active{transform:translateY(2px)}
+  .chip.sel{border-color:var(--aqua);background:#EDF9FD}
+  .chip.done{border-color:var(--spring);background:#EAF9F0;color:var(--spring-dark);cursor:default;opacity:.9}
+  .chip.miss{border-color:var(--coral);background:#FDEEEA;animation:shake .3s}
+  .chip:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+  .match-hint{text-align:center;font-size:13px;font-weight:700;color:var(--ink-soft);margin-top:14px}
+
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}
+    60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+  .shake{animation:shake .35s}
+
+  /* ---------- feedback footer ---------- */
+  .footer{position:absolute;left:0;right:0;bottom:0;padding:16px 20px 20px;background:#fff;
+    border-top:2px solid var(--line);z-index:5;transition:transform .3s cubic-bezier(.3,1.1,.5,1)}
+  .feedback{transform:translateY(120%);transition:transform .32s cubic-bezier(.3,1.2,.5,1)}
+  .feedback.show{transform:translateY(0)}
+  .feedback.correct{background:#DFF6EA;border-top-color:#B7E7CC}
+  .feedback.incorrect{background:#FCE7E1;border-top-color:#F5C6B8}
+  .fb-head{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+  .fb-badge{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none;
+    background:#fff;font-size:24px;font-weight:900}
+  .correct .fb-badge{color:var(--spring)} .incorrect .fb-badge{color:var(--coral)}
+  .fb-title{font-family:var(--f-disp);font-weight:600;font-size:19px}
+  .correct .fb-title{color:var(--spring-dark)} .incorrect .fb-title{color:var(--coral-dark)}
+  .fb-text{font-size:13.5px;font-weight:600;line-height:1.5;margin:0 0 12px;color:var(--ink)}
+  .correct .fb-text{color:#1E6E44} .incorrect .fb-text{color:#8F3320}
+
+  /* ---------- overlays: intro / result / gameover ---------- */
+  .overlay{position:absolute;inset:0;background:linear-gradient(180deg,#F4FBFE,#DCEEF5);
+    z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:30px 24px;text-align:center;animation:fade .3s}
+  .ov-title{font-family:var(--f-disp);font-weight:700;font-size:27px;margin:14px 0 4px;color:var(--ink)}
+  .ov-sub{font-size:15px;font-weight:600;color:var(--ink-soft);line-height:1.5;max-width:300px;margin-bottom:8px}
+  .speech{background:#fff;border:2px solid var(--line);border-radius:18px;padding:14px 18px;
+    max-width:300px;font-weight:700;font-size:15px;line-height:1.45;color:var(--ink);position:relative;
+    box-shadow:var(--shadow);margin-bottom:6px}
+  .speech::after{content:"";position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);
+    border:11px solid transparent;border-top-color:#fff;border-bottom:0}
+  .ov-actions{width:100%;max-width:300px;margin-top:26px;display:flex;flex-direction:column;gap:10px}
+
+  .stats-row{display:flex;gap:12px;margin:20px 0 4px;width:100%;max-width:320px}
+  .statcard{flex:1;border-radius:16px;padding:14px 8px;color:#fff;display:flex;flex-direction:column;gap:2px;
+    box-shadow:0 5px 0 rgba(0,0,0,.12)}
+  .statcard .n{font-family:var(--f-disp);font-weight:700;font-size:24px}
+  .statcard .l{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.9}
+  .sc-xp{background:linear-gradient(135deg,var(--aqua),#0C97BC)}
+  .sc-acc{background:linear-gradient(135deg,var(--brass),#CE8A1D)}
+  .sc-flow{background:linear-gradient(135deg,var(--spring),#28A05C)}
+
+  .mascot{width:150px;height:210px}
+  .mascot.small{width:64px;height:90px;flex:none}
+  @media (prefers-reduced-motion:no-preference){
+    .bob{animation:bob 2.6s ease-in-out infinite}
+    @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  }
+  .confetti{position:absolute;top:-10px;width:9px;height:14px;border-radius:2px;opacity:.9;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(560px) rotate(540deg);opacity:0}}
+
+  .credit{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:10px;color:#9DB6C1;font-weight:700;letter-spacing:.05em;z-index:1}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+  <div id="screen"></div>
+</div>
+
+<!-- reusable drop + mascot SVG templates -->
+<template id="tpl-drop">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C12 2 4.5 11 4.5 15.5A7.5 7.5 0 0 0 19.5 15.5C19.5 11 12 2 12 2Z"
+    fill="currentColor"/><path d="M9 13.5c-.6 1 .1 2.4 1.3 2.7" stroke="#fff" stroke-width="1.4" stroke-linecap="round" fill="none" opacity=".8"/></svg>
+</template>
+
+<script>
+/* ============================================================
+   НАСОСОЛИНГО — прототип. Юнит «Монтаж», урок «Установка насоса».
+   Ванильный JS, одна страница. Маскот: субмерсибл Тритон (арт.3363).
+   ============================================================ */
+
+const DROP = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C12 2 4.5 11 4.5 15.5A7.5 7.5 0 0 0 19.5 15.5C19.5 11 12 2 12 2Z" fill="currentColor"/><path d="M9 13.4c-.55 1 .1 2.4 1.3 2.7" stroke="#fff" stroke-width="1.3" stroke-linecap="round" fill="none" opacity=".75"/></svg>`;
+
+/* --- маскот-насос с настроениями: neutral | happy | worried | party --- */
+function mascot(mood, cls){
+  const eyes = {
+    neutral:`<circle cx="34" cy="70" r="9" fill="#fff"/><circle cx="66" cy="70" r="9" fill="#fff"/>
+             <circle cx="36" cy="71" r="4.2" fill="#0C3A4C"/><circle cx="68" cy="71" r="4.2" fill="#0C3A4C"/>`,
+    happy:`<path d="M26 71q8-9 16 0" stroke="#0C3A4C" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+           <path d="M58 71q8-9 16 0" stroke="#0C3A4C" stroke-width="4.5" fill="none" stroke-linecap="round"/>`,
+    worried:`<circle cx="34" cy="72" r="9" fill="#fff"/><circle cx="66" cy="72" r="9" fill="#fff"/>
+             <circle cx="34" cy="74" r="4" fill="#0C3A4C"/><circle cx="66" cy="74" r="4" fill="#0C3A4C"/>
+             <path d="M24 60l16 5M76 60l-16 5" stroke="#0C3A4C" stroke-width="3.5" stroke-linecap="round"/>`,
+    party:`<path d="M26 72q8-10 16 0" stroke="#0C3A4C" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+           <path d="M58 72q8-10 16 0" stroke="#0C3A4C" stroke-width="4.5" fill="none" stroke-linecap="round"/>`
+  }[mood];
+  const mouth = {
+    neutral:`<path d="M40 90q10 8 20 0" stroke="#0C3A4C" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+    happy:`<path d="M38 88q12 16 24 0z" fill="#0C3A4C"/>`,
+    worried:`<path d="M40 96q10 -8 20 0" stroke="#0C3A4C" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+    party:`<path d="M36 87q14 20 28 0z" fill="#0C3A4C"/><path d="M40 92q10 6 20 0z" fill="#F0603F"/>`
+  }[mood];
+  const extra = {
+    neutral:``, happy:``,
+    worried:`<path d="M84 78q5 8 0 14" stroke="#22A7E0" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="84" cy="94" r="3.4" fill="#22A7E0"/>`,
+    party:`<text x="16" y="34" font-size="18">✨</text><text x="78" y="30" font-size="16">💧</text>`
+  }[mood];
+  return `<svg class="mascot ${cls||''}" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Насос Тритон, арт. 3363">
+    <defs>
+      <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#DCE7EC"/><stop offset=".28" stop-color="#F4F9FB"/>
+        <stop offset=".55" stop-color="#C3D4DB"/><stop offset="1" stop-color="#E4EDF1"/>
+      </linearGradient>
+    </defs>
+    <!-- cable -->
+    <path d="M50 8 q-20 -4 -18 12" stroke="#0C3A4C" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- top cap -->
+    <rect x="30" y="6" width="40" height="16" rx="7" fill="#10B0D6"/>
+    <rect x="34" y="9" width="32" height="4" rx="2" fill="#fff" opacity=".5"/>
+    <!-- body -->
+    <rect x="26" y="20" width="48" height="96" rx="20" fill="url(#steel)" stroke="#B7CAD3" stroke-width="1.5"/>
+    <!-- sticker 3363 -->
+    <rect x="34" y="104" width="32" height="15" rx="4" fill="#0C3A4C"/>
+    <text x="50" y="115" text-anchor="middle" font-family="Nunito,sans-serif" font-weight="900" font-size="10" fill="#38C173">3363</text>
+    <!-- intake bottom -->
+    <path d="M32 116 h36 l-5 12 h-26 z" fill="#9FB4BD"/>
+    <rect x="38" y="120" width="3" height="7" rx="1.5" fill="#0C3A4C" opacity=".5"/>
+    <rect x="48" y="120" width="3" height="7" rx="1.5" fill="#0C3A4C" opacity=".5"/>
+    <rect x="58" y="120" width="3" height="7" rx="1.5" fill="#0C3A4C" opacity=".5"/>
+    <!-- face -->
+    ${eyes}${mouth}${extra}
+  </svg>`;
+}
+
+/* small pump used inside well scenes */
+function pumpSVG(x,y,scale){
+  scale=scale||1;
+  return `<g transform="translate(${x} ${y}) scale(${scale})">
+    <rect x="-13" y="-30" width="26" height="52" rx="10" fill="url(#steel2)" stroke="#8FA6B0" stroke-width="1.4"/>
+    <rect x="-9" y="14" width="18" height="8" rx="3" fill="#0C3A4C"/>
+    <text x="0" y="20.5" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="6" fill="#38C173">3363</text>
+    <path d="M-11 22 h22 l-3 7 h-16 z" fill="#9FB4BD"/>
+  </g>`;
+}
+
+/* ===================== QUESTIONS ===================== */
+const QUESTIONS = [
+  { type:'mc',
+    kicker:'Правило глубины',
+    q:'На какой глубине должен висеть скважинный насос?',
+    options:[
+      {t:'На самом дне — чтобы забирать максимум воды'},
+      {t:'Ниже динамического уровня, но на 1–2 м выше дна'},
+      {t:'У оголовка — чтобы проще было доставать'}
+    ],
+    answer:1,
+    ok:'Верно! Ниже динамического уровня — насос всегда в воде. И на 1–2 м выше дна — чтобы не хватать песок.',
+    err:['На дне насос всасывает песок и ил — крыльчатка стачивается за сезон. Нужно на 1–2 м выше дна.',
+         '',
+         'У оголовка насос окажется выше воды — сухой ход и перегрев. Вешают ниже динамического уровня.']
+  },
+  { type:'tap',
+    kicker:'Найди ошибку',
+    q:'Монтаж с браком. Тапни то, из-за чего насос сгорит.',
+    scene:'dryrun',
+    hint:'Подсказка: посмотри, где уровень воды.',
+    ok:'Точно! Насос висит выше динамического уровня — работает всухую, перегревается и выходит из строя. Опускаем в воду.',
+    errWrong:'Смотри на уровень воды: насос висит в воздухе, выше динамического уровня. Это и есть сухой ход.'
+  },
+  { type:'slider',
+    kicker:'Поставь правильно',
+    q:'Опусти насос в рабочую зону.',
+    hint:'Тяни ползунок. Зелёная зона — в воде и выше дна.',
+    ok:'Идеально. Насос полностью в воде и не достаёт до дна — так он охлаждается и не хватает песок.'
+  },
+  { type:'match',
+    kicker:'Симптом → причина',
+    q:'Свяжи неисправность с причиной.',
+    pairs:[
+      {l:'Гудит, но не качает',           r:'Сухой ход / завоздушивание'},
+      {l:'В воде песок, быстрый износ',    r:'Насос висит слишком низко'},
+      {l:'Частые вкл/выкл',               r:'Мало воздуха в гидробаке'}
+    ],
+    ok:'Связал верно! Симптом → причина — это половина ремонта.'
+  },
+  { type:'mc',
+    kicker:'Подбор по объекту',
+    q:'Какой минимальный напор нужен насосу?',
+    scenario:'Скважина <b>50 м</b>. Динамический уровень <b>32 м</b>. Дом 2 этажа (<b>+8 м</b>). На выходе нужно <b>3 атм</b> (≈ 30 м).',
+    options:[
+      {t:'40 м'},
+      {t:'60 м'},
+      {t:'80 м'}
+    ],
+    answer:2,
+    ok:'Верно! 32 (уровень) + 8 (дом) + 30 (3 атм) ≈ 70 м, плюс запас на потери → берём ~80 м.',
+    err:['Мало. Один динамический уровень уже 32 м — на давление и высоту дома напора не останется.',
+         'Впритык и без запаса: 32 + 8 + 30 ≈ 70 м почти всё съедают. На верхнем этаже давления не будет. Нужно ~80 м.',
+         '']
+  }
+];
+
+/* ===================== STATE ===================== */
+const S = { screen:'path', qi:0, lives:3, xp:0, correct:0, wrong:0, done:false };
+const app = document.getElementById('screen');
+
+/* ===================== SCREENS ===================== */
+function renderPath(){
+  S.screen='path';
+  const lessons = [
+    {title:'Термины',        state:'done'},
+    {title:'Динамический уровень', state:'done'},
+    {title:'Обратный клапан',state:'done'},
+    {title:'Установка насоса',state:S.done?'done':'current', cap:S.done?'':'СТАРТ'},
+    {title:'Кабель и оголовок',state:S.done?'current':'lock', cap:S.done?'СТАРТ':''},
+    {title:'Пусконаладка',   state:'lock'}
+  ];
+  const strata = [
+    {top:0,   h:120, col:'linear-gradient(#EAF6FB,#DCEFF6)', lbl:'', depth:'0 м'},
+    {top:120, h:120, col:'linear-gradient(var(--soil1),#BE9765)', lbl:'Чернозём'},
+    {top:240, h:120, col:'linear-gradient(#BE9765,var(--soil2))', lbl:'Глина', depth:'20 м'},
+    {top:360, h:110, col:'linear-gradient(var(--soil3),#CBB268)', lbl:'Песок'},
+    {top:470, h:230, col:'linear-gradient(#5FB6E4,var(--water))', lbl:'Водоносный слой', depth:'32 м'}
+  ];
+  const lifeDrops = Array.from({length:3},(_,i)=>
+    `<span class="${i<S.lives?'':'drop-empty'}">${DROP}</span>`).join('');
+
+  app.innerHTML = `
+  <div class="screen">
+    <div class="topbar">
+      <div class="stat flow"><span class="ico">🌊</span>${12}</div>
+      <div class="stat xp"><span class="ico">⚡</span>${340+S.xp}</div>
+      <div class="stat life"><div class="drops">${lifeDrops}</div></div>
+    </div>
+
+    <div class="unit-banner">
+      <div class="eyebrow">ЮНИТ 3 · ИЗ 6</div>
+      <div class="uname">Монтаж скважинного</div>
+      <div class="wave">💧</div>
+    </div>
+
+    <div class="well">
+      <div class="well-inner">
+        ${strata.map(s=>`
+          <div class="strata" style="top:${s.top}px;height:${s.h}px;background:${s.col}">
+            ${s.lbl?`<div class="lbl">${s.lbl}</div>`:''}
+            ${s.depth?`<div class="depth">${s.depth}</div>`:''}
+          </div>`).join('')}
+        <div class="casing"></div>
+
+        <div class="nodes">
+          ${lessons.map((l,i)=>{
+            const off = i%2===0?'off-l':'off-r';
+            const clickable = l.state==='current';
+            return `
+            <div class="node-wrap">
+              <button class="node ${l.state} ${off}" ${clickable?'onclick="startLesson()"':'disabled'}
+                aria-label="${l.title}${l.state==='done'?', пройдено':l.state==='lock'?', закрыто':''}">
+                ${l.state==='done'?'✓':l.state==='current'?'💧':'🔒'}
+                ${l.cap?`<span class="cap">${l.cap}</span>`:''}
+              </button>
+              <div class="node-title">${l.title}</div>
+            </div>`;
+          }).join('')}
+          ${pumpMarkerHTML()}
+        </div>
+      </div>
+    </div>
+    <div class="credit">ПРОТОТИП · AQUARIO · арт. 3363</div>
+  </div>`;
+}
+
+function pumpMarkerHTML(){
+  return `<svg class="pump-marker bob" viewBox="0 0 44 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs><linearGradient id="steel3" x1="0" x2="1"><stop offset="0" stop-color="#DCE7EC"/>
+      <stop offset=".4" stop-color="#F4F9FB"/><stop offset="1" stop-color="#C3D4DB"/></linearGradient></defs>
+    <rect x="9" y="4" width="26" height="52" rx="10" fill="url(#steel3)" stroke="#8FA6B0" stroke-width="1.4"/>
+    <rect x="14" y="40" width="16" height="9" rx="3" fill="#0C3A4C"/>
+    <text x="22" y="47" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="7" fill="#38C173">3363</text>
+    <path d="M11 56 h22 l-4 9 h-14 z" fill="#9FB4BD"/>
+  </svg>`;
+}
+
+/* ---------- intro overlay ---------- */
+function startLesson(){
+  S.qi=0; S.lives=3; S.xp=0; S.correct=0; S.wrong=0;
+  app.innerHTML = `
+  <div class="screen"><div class="overlay">
+    ${mascot('happy','bob')}
+    <div class="speech">Привет! Я <b>Тритон</b>, арт. 3363 — твой напарник. Урок: как правильно повесить скважинный насос.</div>
+    <div class="ov-sub">У тебя <b style="color:var(--drop)">3 капли</b> — теряешь одну за ошибку. Погнали 👇</div>
+    <div class="ov-actions">
+      <button class="btn" onclick="renderLesson()">Погнали</button>
+      <button class="btn ghost" onclick="renderPath()">Назад к карте</button>
+    </div>
+  </div></div>`;
+}
+
+/* ===================== LESSON RENDER ===================== */
+function renderLesson(){
+  S.screen='lesson';
+  const q = QUESTIONS[S.qi];
+  const progress = (S.qi/QUESTIONS.length)*100;
+  app.innerHTML = `
+  <div class="screen">
+    <div class="lesson-top">
+      <button class="xclose" onclick="renderPath()" aria-label="Выйти">✕</button>
+      <div class="pbar"><div class="pfill" id="pfill" style="width:${progress}%"></div></div>
+      <div class="life-mini">${DROP}<span id="lifeN">${S.lives}</span></div>
+    </div>
+    <div class="qbody" id="qbody">
+      <div class="qkicker">${q.kicker}</div>
+      <h2 class="qtext">${q.q}</h2>
+      ${q.scenario?`<div class="scenario">${q.scenario}</div>`:''}
+      <div id="qzone"></div>
+    </div>
+    <div class="footer" id="footer">
+      <button class="btn" id="checkBtn" disabled onclick="onCheck()">Проверить</button>
+    </div>
+    <div class="footer feedback" id="feedback">
+      <div class="fb-head">
+        <div class="fb-badge" id="fbBadge"></div>
+        <div class="fb-title" id="fbTitle"></div>
+      </div>
+      <p class="fb-text" id="fbText"></p>
+      <button class="btn" id="contBtn" onclick="nextQuestion()">Продолжить</button>
+    </div>
+  </div>`;
+  const zone = document.getElementById('qzone');
+  if(q.type==='mc')     renderMC(zone,q);
+  if(q.type==='tap')    renderTap(zone,q);
+  if(q.type==='slider') renderSlider(zone,q);
+  if(q.type==='match')  renderMatch(zone,q);
+  // bump progress after paint
+  requestAnimationFrame(()=>{document.getElementById('pfill').style.width=((S.qi+0.15)/QUESTIONS.length*100)+'%';});
+}
+
+/* ---- helpers for footer / feedback ---- */
+let CHECK = null; // function returning {correct, idx?} for current question
+function enableCheck(on){ const b=document.getElementById('checkBtn'); if(b) b.disabled=!on; }
+function setCheck(fn){ CHECK = fn; }
+
+function onCheck(){
+  if(!CHECK) return;
+  const res = CHECK();
+  showFeedback(res);
+}
+
+function showFeedback(res){
+  const q = QUESTIONS[S.qi];
+  const fb = document.getElementById('feedback');
+  const mainFooter = document.getElementById('footer');
+  const badge = document.getElementById('fbBadge');
+  const title = document.getElementById('fbTitle');
+  const text = document.getElementById('fbText');
+
+  if(res.correct){
+    S.correct++; S.xp+=4;
+    fb.className='footer feedback correct show';
+    badge.textContent='✓'; title.textContent='Верно!';
+    text.textContent = res.text || q.ok;
+  } else {
+    S.wrong++; S.lives--;
+    updateLives(true);
+    fb.className='footer feedback incorrect show';
+    badge.textContent='✕'; title.textContent='Не совсем';
+    text.textContent = res.text || 'Попробуй ещё раз в следующий раз.';
+    // shake body
+    const body=document.getElementById('qbody');
+    body.classList.remove('shake'); void body.offsetWidth; body.classList.add('shake');
+  }
+  mainFooter.style.transform='translateY(120%)';
+}
+
+function updateLives(animate){
+  const n=document.getElementById('lifeN'); if(n) n.textContent=S.lives;
+}
+
+function nextQuestion(){
+  if(S.lives<=0){ renderGameOver(); return; }
+  S.qi++;
+  if(S.qi>=QUESTIONS.length){ renderResult(); return; }
+  renderLesson();
+}
+
+/* ---------- MC ---------- */
+function renderMC(zone,q){
+  let sel=null, locked=false;
+  const keys=['А','Б','В','Г'];
+  zone.innerHTML = `<div class="opts">${q.options.map((o,i)=>
+    `<button class="opt" data-i="${i}"><span class="key">${keys[i]}</span><span>${o.t}</span></button>`).join('')}</div>`;
+  const opts=[...zone.querySelectorAll('.opt')];
+  opts.forEach(el=>el.addEventListener('click',()=>{
+    if(locked) return;
+    sel=+el.dataset.i;
+    opts.forEach(o=>o.classList.toggle('sel', +o.dataset.i===sel));
+    enableCheck(true);
+  }));
+  setCheck(()=>{
+    locked=true;
+    const correct = sel===q.answer;
+    opts.forEach(o=>{
+      o.setAttribute('disabled','');
+      const i=+o.dataset.i;
+      if(i===q.answer) o.classList.add('right');
+      else if(i===sel) o.classList.add('wrong');
+      o.classList.remove('sel');
+    });
+    return {correct, text: correct? q.ok : (q.err[sel]||'') };
+  });
+}
+
+/* ---------- TAP: find the error (dry run) ---------- */
+function renderTap(zone,q){
+  let sel=null, locked=false;
+  // well cross-section; pump hangs ABOVE dynamic water level = error
+  zone.innerHTML = `
+  <div class="scene">
+    <svg viewBox="0 0 300 360" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="steel2" x1="0" x2="1"><stop offset="0" stop-color="#DCE7EC"/>
+          <stop offset=".4" stop-color="#F4F9FB"/><stop offset="1" stop-color="#C3D4DB"/></linearGradient>
+      </defs>
+      <!-- strata -->
+      <rect x="0" y="0" width="300" height="60" fill="#EAF6FB"/>
+      <rect x="0" y="60" width="300" height="70" fill="#CBA574"/>
+      <rect x="0" y="130" width="300" height="70" fill="#B0894F"/>
+      <rect x="0" y="200" width="300" height="160" fill="#5FB6E4"/>
+      <!-- casing -->
+      <rect x="112" y="40" width="76" height="320" fill="#EAF2F6" opacity=".55"/>
+      <line x1="112" y1="40" x2="112" y2="360" stroke="#fff" stroke-width="3"/>
+      <line x1="188" y1="40" x2="188" y2="360" stroke="#fff" stroke-width="3"/>
+      <!-- water inside casing (below dynamic level y=210) -->
+      <rect x="115" y="210" width="70" height="150" fill="#37A6DE" opacity=".55"/>
+      <!-- sediment -->
+      <rect x="115" y="342" width="70" height="18" fill="#8A9BA5"/>
+      <!-- dynamic level line -->
+      <g class="hot" tabindex="0" data-z="level" role="button" aria-label="Уровень воды">
+        <rect class="halo" x="150" y="196" width="150" height="26" rx="6" fill="#22A7E0" opacity="0"/>
+        <path d="M60 210 q10 -6 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"
+          stroke="#1E7FB8" stroke-width="2.5" fill="none"/>
+        <text x="196" y="206" font-family="Nunito" font-weight="800" font-size="11" fill="#0C3A4C">динамич. уровень</text>
+      </g>
+      <!-- wellhead -->
+      <g class="hot" tabindex="0" data-z="head" role="button" aria-label="Оголовок">
+        <circle class="halo" cx="150" cy="34" r="26" fill="#22A7E0" opacity="0"/>
+        <rect x="124" y="22" width="52" height="20" rx="5" fill="#0C3A4C"/>
+        <rect x="140" y="8" width="20" height="16" rx="4" fill="#556F7B"/>
+      </g>
+      <!-- riser pipe from head down to pump -->
+      <rect x="146" y="42" width="8" height="118" fill="#7E96A0"/>
+      <!-- PUMP hanging above water (the error) -->
+      <g class="hot" tabindex="0" data-z="pump" role="button" aria-label="Насос">
+        <circle class="halo" cx="150" cy="140" r="34" fill="#F0603F" opacity="0"/>
+        ${pumpSVG(150,160,1)}
+      </g>
+    </svg>
+  </div>
+  <div class="tap-hint">${q.hint}</div>`;
+
+  const hots=[...zone.querySelectorAll('.hot')];
+  function pick(el){
+    if(locked) return;
+    sel=el.dataset.z;
+    hots.forEach(h=>h.classList.toggle('sel', h.dataset.z===sel));
+    enableCheck(true);
+  }
+  hots.forEach(el=>{
+    el.addEventListener('click',()=>pick(el));
+    el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick(el);}});
+  });
+  setCheck(()=>{
+    locked=true;
+    const correct = sel==='pump';
+    return {correct, text: correct? q.ok : q.errWrong };
+  });
+}
+
+/* ---------- SLIDER: hang the pump into the green zone ---------- */
+function renderSlider(zone,q){
+  // range 0..100 → pump center-y 84..300. dynamic level y=150, bottom sediment y=318.
+  // green zone: pump fully submerged & clear of bottom → value in [42,82]
+  const GREEN=[42,82];
+  zone.innerHTML = `
+  <div class="scene">
+    <svg viewBox="0 0 300 360" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="steel2b" x1="0" x2="1"><stop offset="0" stop-color="#DCE7EC"/>
+        <stop offset=".4" stop-color="#F4F9FB"/><stop offset="1" stop-color="#C3D4DB"/></linearGradient></defs>
+      <rect x="0" y="0" width="300" height="45" fill="#EAF6FB"/>
+      <rect x="0" y="45" width="300" height="70" fill="#CBA574"/>
+      <rect x="0" y="115" width="300" height="35" fill="#B0894F"/>
+      <rect x="0" y="150" width="300" height="210" fill="#5FB6E4"/>
+      <rect x="112" y="30" width="76" height="330" fill="#EAF2F6" opacity=".5"/>
+      <line x1="112" y1="30" x2="112" y2="360" stroke="#fff" stroke-width="3"/>
+      <line x1="188" y1="30" x2="188" y2="360" stroke="#fff" stroke-width="3"/>
+      <rect x="115" y="150" width="70" height="210" fill="#37A6DE" opacity=".5"/>
+      <!-- target working zone band -->
+      <rect x="115" y="182" width="70" height="120" fill="#38C173" opacity=".18"/>
+      <text x="222" y="220" font-family="Nunito" font-weight="800" font-size="10" fill="#28A05C">рабочая зона</text>
+      <line x1="150" y1="182" x2="212" y2="182" stroke="#28A05C" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <!-- sediment -->
+      <rect x="115" y="322" width="70" height="38" fill="#8A9BA5"/>
+      <text x="196" y="345" font-family="Nunito" font-weight="800" font-size="10" fill="#5C7C8A">дно / песок</text>
+      <!-- dynamic level -->
+      <path d="M60 150 q10 -5 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"
+        stroke="#1E7FB8" stroke-width="2.5" fill="none"/>
+      <text x="196" y="146" font-family="Nunito" font-weight="800" font-size="10" fill="#0C3A4C">динамич. уровень</text>
+      <!-- head + riser -->
+      <rect x="124" y="18" width="52" height="18" rx="5" fill="#0C3A4C"/>
+      <rect x="146" y="36" width="8" height="0" id="riser" fill="#7E96A0"/>
+      <!-- movable pump -->
+      <g id="movePump">${pumpSVG(150,90,1)}</g>
+    </svg>
+  </div>
+  <div class="slider-status ok" id="sstatus">Тяни ползунок вниз →</div>
+  <input class="depth-slider" id="depth" type="range" min="0" max="100" value="6"
+    aria-label="Глубина подвеса насоса">
+  <div class="slider-hint">${q.hint}</div>`;
+
+  const slider=document.getElementById('depth');
+  const status=document.getElementById('sstatus');
+  const grp=document.getElementById('movePump');
+  const riser=document.getElementById('riser');
+  const yFor = v => 90 + (v/100)*(300-90);   // 90..300
+  function update(){
+    const v=+slider.value; const y=yFor(v);
+    grp.setAttribute('transform',`translate(0 ${y-90})`);
+    riser.setAttribute('height', Math.max(0,(y-30)-6));
+    let cls,msg;
+    if(v<GREEN[0]){ cls='dry'; msg='⚠ Сухой ход — насос выше воды'; }
+    else if(v>GREEN[1]){ cls='sand'; msg='⚠ Хватает песок со дна'; }
+    else { cls='ok'; msg='✓ В воде и выше дна — то, что нужно'; }
+    status.className='slider-status '+cls; status.textContent=msg;
+    enableCheck(true);
+  }
+  slider.addEventListener('input',update);
+  update();
+  setCheck(()=>{
+    const v=+slider.value;
+    const correct = v>=GREEN[0] && v<=GREEN[1];
+    let text=q.ok;
+    if(!correct && v<GREEN[0]) text='Насос выше динамического уровня — сухой ход и перегрев. Опусти его в воду.';
+    if(!correct && v>GREEN[1]) text='Слишком низко — насос достаёт до дна и хватает песок. Подними на 1–2 м.';
+    return {correct, text};
+  });
+}
+
+/* ---------- MATCH: symptom ↔ cause (self-completing) ---------- */
+function renderMatch(zone,q){
+  // shuffle right column
+  const left=q.pairs.map((p,i)=>({txt:p.l,id:i}));
+  const right=q.pairs.map((p,i)=>({txt:p.r,id:i})).sort(()=>Math.random()-0.5);
+  zone.innerHTML=`
+    <div class="match">
+      <div class="mcol" id="colL">${left.map(o=>
+        `<button class="chip" data-side="L" data-id="${o.id}">${o.txt}</button>`).join('')}</div>
+      <div class="mcol" id="colR">${right.map(o=>
+        `<button class="chip" data-side="R" data-id="${o.id}">${o.txt}</button>`).join('')}</div>
+    </div>
+    <div class="match-hint" id="mhint">Тапни симптом, потом причину</div>`;
+  let selChip=null, doneCount=0;
+  const chips=[...zone.querySelectorAll('.chip')];
+  function clearSel(){ if(selChip){selChip.classList.remove('sel'); selChip=null;} }
+  chips.forEach(ch=>ch.addEventListener('click',()=>{
+    if(ch.classList.contains('done')) return;
+    if(!selChip){ selChip=ch; ch.classList.add('sel'); return; }
+    if(ch===selChip){ clearSel(); return; }
+    if(ch.dataset.side===selChip.dataset.side){ // switch selection within same column
+      clearSel(); selChip=ch; ch.classList.add('sel'); return;
+    }
+    // different columns → attempt match
+    if(ch.dataset.id===selChip.dataset.id){
+      ch.classList.add('done'); selChip.classList.add('done');
+      clearSel(); doneCount++;
+      if(doneCount===q.pairs.length){
+        document.getElementById('mhint').textContent='Готово 👍';
+        // auto-trigger correct feedback
+        showFeedback({correct:true, text:q.ok});
+      }
+    } else {
+      const a=ch, b=selChip; clearSel();
+      [a,b].forEach(c=>{c.classList.add('miss'); setTimeout(()=>c.classList.remove('miss'),350);});
+    }
+  }));
+  // matching needs no Проверить button
+  const cb=document.getElementById('checkBtn');
+  cb.style.display='none';
+  setCheck(()=>({correct:true, text:q.ok}));
+}
+
+/* ===================== RESULT ===================== */
+function renderResult(){
+  S.done=true;
+  const total = QUESTIONS.length;
+  const acc = Math.round(S.correct/total*100);
+  const xpGain = 15 + S.correct*4 + (S.wrong===0?10:0);
+  S.xp = xpGain;
+  app.innerHTML=`
+  <div class="screen"><div class="overlay">
+    ${confettiHTML()}
+    ${mascot('party','bob')}
+    <div class="ov-title">Урок пройден!</div>
+    <div class="ov-sub">${S.wrong===0?'Ни одной ошибки — чистая работа, монтажник 💪':'Есть над чем поработать, но насос повешен правильно.'}</div>
+    <div class="stats-row">
+      <div class="statcard sc-xp"><span class="n">+${xpGain}</span><span class="l">Опыт</span></div>
+      <div class="statcard sc-acc"><span class="n">${acc}%</span><span class="l">Точность</span></div>
+      <div class="statcard sc-flow"><span class="n">🌊 13</span><span class="l">Поток</span></div>
+    </div>
+    <div class="ov-actions">
+      <button class="btn green" onclick="renderPath()">Забрать награду</button>
+      <button class="btn ghost" onclick="startLesson()">Пройти заново</button>
+    </div>
+  </div></div>`;
+}
+
+function confettiHTML(){
+  const cols=['#10B0D6','#38C173','#E3A130','#F0603F','#22A7E0'];
+  let out='';
+  for(let i=0;i<28;i++){
+    const l=Math.random()*100, d=1.6+Math.random()*1.6, delay=Math.random()*0.5;
+    out+=`<span class="confetti" style="left:${l}%;background:${cols[i%cols.length]};
+      animation-duration:${d}s;animation-delay:${delay}s"></span>`;
+  }
+  return out;
+}
+
+/* ===================== GAME OVER ===================== */
+function renderGameOver(){
+  app.innerHTML=`
+  <div class="screen"><div class="overlay">
+    ${mascot('worried','bob')}
+    <div class="ov-title">Капли кончились</div>
+    <div class="speech">Ничего — даже лучшие монтажники переделывают объект. Разберёмся и повесим правильно 💧</div>
+    <div class="ov-actions">
+      <button class="btn" onclick="startLesson()">Ещё раз</button>
+      <button class="btn ghost" onclick="renderPath()">К карте</button>
+    </div>
+  </div></div>`;
+}
+
+/* ===================== BOOT ===================== */
+renderPath();
+</script>
+</body>
+</html>

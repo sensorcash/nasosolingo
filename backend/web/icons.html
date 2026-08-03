@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Иконки — Насосолинго</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:#E9F4F9;color:#0C3A4C;margin:0;padding:26px}
+  .wrap{max-width:920px;margin:0 auto}
+  h1{font-size:24px;margin:0 0 6px}
+  .sub{color:#5C7C8A;font-size:14px;line-height:1.55;margin-bottom:22px;max-width:640px}
+  code{background:#fff;padding:2px 7px;border-radius:6px;border:1px solid #DCEAF0;font-size:13px}
+  h2{font-size:14px;text-transform:uppercase;letter-spacing:.09em;color:#5C7C8A;margin:26px 0 10px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:12px}
+  .cell{background:#fff;border:2px solid #DCEAF0;border-radius:14px;padding:14px 10px;text-align:center}
+  .box{height:56px;display:flex;align-items:center;justify-content:center;border-radius:10px;margin-bottom:9px}
+  .box img{width:30px;height:30px}
+  .nm{font-weight:800;font-size:13px}
+  .fl{color:#5C7C8A;font-size:11px;margin-top:3px;word-break:break-all}
+  .light{background:#F4FAFC}
+  .green{background:#38C173} .blue{background:#10B0D6} .coral{background:#F0603F} .grey{background:#B9CBD4}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Иконки приложения</h1>
+  <div class="sub">
+    Все файлы лежат в <code>web/img/icons/</code>. Чтобы заменить иконку — положи свой файл
+    с тем же именем, либо укажи другое имя в блоке <code>const ICONS</code> в начале
+    <code>web/index.html</code>. Подходят SVG, PNG, JPG. После замены обнови страницу
+    через <code>Ctrl+Shift+R</code>.
+  </div>
+
+  <h2>Показатели</h2>
+  <div class="grid" id="g1"></div>
+  <h2>Узлы карты — белые, лежат на цветных кружках</h2>
+  <div class="grid" id="g2"></div>
+  <h2>Обратная связь</h2>
+  <div class="grid" id="g3"></div>
+  <h2>Навигация</h2>
+  <div class="grid" id="g4"></div>
+  <h2>Разделы и действия</h2>
+  <div class="grid" id="g5"></div>
+</div>
+
+<script>
+const GROUPS = {
+  g1: [['streak','поток'],['xp','опыт'],['life','капля'],['life-empty','капля потрачена'],
+       ['level','уровень'],['goal','цель дня'],['accuracy','точность'],['time','время']],
+  g2: [['done','пройден','green'],['current','текущий','blue'],['locked','закрыт','grey']],
+  g3: [['ok','верно'],['fail','неверно'],['warn','внимание']],
+  g4: [['close','закрыть'],['back','назад'],['arrow','вперёд','coral'],['menu','меню']],
+  g5: [['review','разбор'],['lesson','урок'],['user','профиль'],['export','выгрузка'],
+       ['logout','выход'],['delete','удаление']],
+};
+for(const [id, items] of Object.entries(GROUPS)){
+  document.getElementById(id).innerHTML = items.map(([name, label, bg]) => `
+    <div class="cell">
+      <div class="box ${bg||'light'}"><img src="/static/img/icons/${name}.svg" alt="${label}"></div>
+      <div class="nm">${label}</div>
+      <div class="fl">${name}.svg</div>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>
