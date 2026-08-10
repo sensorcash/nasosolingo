@@ -306,6 +306,7 @@
   .qimg-cap{text-align:center;font-size:12px;color:var(--ink-soft);font-weight:700;margin-top:5px}
   @keyframes sp{to{transform:rotate(360deg)}}
 </style>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 <div id="root"></div>
@@ -1432,7 +1433,43 @@ function renderDeleteConfirm(){
 }
 
 /* ---------- старт ---------- */
-if(store.access) loadMap(); else renderLogin();
+/* ============================================================
+   ЗАПУСК. Внутри Telegram Mini App — входим автоматически по подписанным
+   данным (без пароля). В обычном браузере — привычный вход/регистрация.
+   ============================================================ */
+function renderTgError(msg){
+  root.innerHTML = `<div class="center pad">
+    ${mascot('worried','bob')}
+    <h1>Не удалось войти</h1>
+    <div class="err" style="max-width:320px">${msg}</div>
+    <div style="width:100%;max-width:320px;margin-top:14px">
+      <button class="btn" id="retry">Повторить</button>
+    </div></div>`;
+  document.getElementById('retry').onclick = boot;
+}
+
+async function boot(){
+  const tg = window.Telegram && window.Telegram.WebApp;
+  const inTelegram = tg && typeof tg.initData === 'string' && tg.initData.length > 0;
+
+  if(inTelegram){
+    try{ tg.ready(); tg.expand(); if(tg.setHeaderColor) tg.setHeaderColor('#EAF6FB'); }catch(_){}
+    if(store.access){ loadMap(); return; }        // уже входили в этой сессии
+    try{
+      const d = await api('/api/v1/auth/telegram', {method:'POST', auth:false,
+        body:{init_data: tg.initData}});
+      store.set(d.access_token, d.refresh_token);
+      if(d.is_new) startOnboarding(); else loadMap();
+    }catch(e){
+      renderTgError(e.message || 'Ошибка входа через Telegram');
+    }
+    return;
+  }
+
+  // обычный браузер (веб-версия по ссылке)
+  if(store.access) loadMap(); else renderLogin();
+}
+boot();
 </script>
 </body>
 </html>

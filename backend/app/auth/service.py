@@ -315,3 +315,43 @@ async def delete_account(session: AsyncSession, user: User, password: str, confi
     await session.execute(delete(UserState).where(UserState.user_id == user_id))
     await session.execute(delete(User).where(User.id == user_id))
     await session.commit()
+
+
+async def telegram_login(session: AsyncSession, init_data: str, ip: str) -> tuple[User, str, str, bool]:
+    """Вход через Telegram Mini App.
+
+    Проверяем подпись Telegram, находим пользователя по telegram_id, а если его
+    ещё нет — заводим (без пароля: e-mail синтетический, пароль случайный и
+    неиспользуемый — такой аккаунт входит только через Telegram). Возвращаем те же
+    токены, что и обычный вход, поэтому дальше всё приложение работает как всегда.
+    """
+    import secrets as _secrets
+
+    from app.auth.telegram import validate_init_data
+
+    info = validate_init_data(init_data)
+    tg_id = info["telegram_id"]
+
+    user = await session.scalar(select(User).where(User.telegram_id == tg_id))
+    is_new = user is None
+    if user is None:
+        user = User(
+            email=f"tg{tg_id}@telegram.bot",
+            password_hash=hash_password(_secrets.token_urlsafe(32)),
+            nickname=info["first_name"] or f"tg{tg_id}",
+            username=None,
+            telegram_id=tg_id,
+            email_verified=True,          # личность подтверждена Telegram, письма не шлём
+        )
+        session.add(user)
+        await session.flush()
+        session.add(UserState(user_id=user.id, streak_freezes=2))
+    else:
+        # подтянуть свежее имя из Telegram, если оно поменялось
+        if info["first_name"] and user.nickname != info["first_name"]:
+            user.nickname = info["first_name"]
+
+    user.last_login_at = datetime.now(timezone.utc)
+    access, refresh = await _issue_tokens(session, user, None)
+    await session.commit()
+    return user, access, refresh, is_new

@@ -62,9 +62,14 @@ class StateOut(BaseModel):
     streak_count: int
 
 
+class TelegramLoginIn(BaseModel):
+    init_data: str        # строка Telegram.WebApp.initData
+
+
 class TokenPairOut(BaseModel):
     access_token: str
     refresh_token: str
+    is_new: bool = False        # true — аккаунт только что создан (для онбординга в Telegram)
     token_type: str = "bearer"
     user: UserOut
 
