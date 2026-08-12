@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     # Telegram Mini App: токен бота от @BotFather. Пусто → вход через Telegram выключен.
     telegram_bot_token: str = ""
     telegram_auth_max_age: int = 86400         # макс. возраст initData (защита от переигрывания)
+    telegram_reminder_hour: int = 18           # час (по времени сервера) для напоминаний в Telegram
 
     # Публичный адрес приложения — для ссылок в письмах
     public_base_url: str = "http://localhost:8000"
