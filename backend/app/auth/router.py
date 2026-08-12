@@ -32,6 +32,16 @@ async def register(data: sc.RegisterIn, request: Request,
     return sc.TokenPairOut(access_token=access, refresh_token=refresh, user=_user_out(user))
 
 
+@router.post("/telegram", response_model=sc.TokenPairOut)
+async def telegram_login(data: sc.TelegramLoginIn, request: Request,
+                         session: AsyncSession = Depends(get_session)):
+    """Вход из Telegram Mini App по подписанным данным. Веб-вход не затрагивает."""
+    user, access, refresh, is_new = await svc.telegram_login(
+        session, data.init_data, _client_ip(request))
+    return sc.TokenPairOut(access_token=access, refresh_token=refresh,
+                           user=_user_out(user), is_new=is_new)
+
+
 @router.post("/login", response_model=sc.TokenPairOut)
 async def login(data: sc.LoginIn, request: Request,
                 session: AsyncSession = Depends(get_session)):

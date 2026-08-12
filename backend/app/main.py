@@ -1,4 +1,6 @@
+import asyncio
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import Depends, FastAPI
@@ -15,7 +17,31 @@ from app.errors import install_error_handlers
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s [%(name)s] %(message)s")
 
-app = FastAPI(title="Насосолинго — API", version="0.2.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """При старте (если задан токен бота) поднимаем фоновые задачи Telegram:
+    приём /start и ежедневные напоминания. При остановке — гасим их."""
+    tasks = []
+    stop = asyncio.Event()
+    if settings.telegram_bot_token:
+        from app import bot
+        tasks = [asyncio.create_task(bot.run_polling(stop)),
+                 asyncio.create_task(bot.run_reminders(stop))]
+    try:
+        yield
+    finally:
+        stop.set()
+        for t in tasks:
+            t.cancel()
+        for t in tasks:
+            try:
+                await t
+            except (asyncio.CancelledError, Exception):
+                pass
+
+
+app = FastAPI(title="Насосолинго — API", version="0.2.0", lifespan=lifespan)
 install_error_handlers(app)
 app.include_router(auth_router)
 app.include_router(game_router)

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, date
 
-from sqlalchemy import String, Boolean, Integer, Text, Date, DateTime, ForeignKey, Uuid, func
+from sqlalchemy import String, Boolean, Integer, BigInteger, Text, Date, DateTime, ForeignKey, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -17,6 +17,8 @@ class User(Base):
     # Короткий логин — альтернатива e-mail при входе (нужен для dev-аккаунта).
     # Обычные пользователи регистрируются по e-mail, username у них пустой.
     username: Mapped[str | None] = mapped_column(String(40), unique=True, nullable=True, index=True)
+    # Telegram Mini App: id пользователя Telegram. Пусто у обычных (веб) аккаунтов.
+    telegram_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, nullable=True, index=True)
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
     nickname: Mapped[str | None] = mapped_column(Text, nullable=True)
