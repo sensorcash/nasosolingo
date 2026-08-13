@@ -695,18 +695,18 @@ function renderMap(){
       <span class="lifebox">${drops}</span>
       <button class="pbtn" id="prof" aria-label="Профиль">${ico('menu')}</button>
     </div>
-    <div class="banner">
-      <div class="k">Уровень ${st.level}${st.xp_to_next_level!=null?` · до следующего ${st.xp_to_next_level}`:''}</div>
-      <div class="t">${course.title}</div>
-    </div>
-    ${nextTimer}
-    ${st.review_pending ? `<button class="review" id="rev">
+    <div class="well"><div class="wrap" style="min-height:${total}px;background:linear-gradient(180deg,#E9F4F9 0px,rgba(233,244,249,0) 170px),url('${imgUrl(MAP_BG)}') top center/100% auto no-repeat,linear-gradient(180deg,#DCEBF4 0%,#B4D6E8 45%,#8FBFD6 100%)">
+      <div class="banner">
+        <div class="k">Уровень ${st.level}${st.xp_to_next_level!=null?` · до следующего ${st.xp_to_next_level}`:''}</div>
+        <div class="t">${course.title}</div>
+      </div>
+      ${nextTimer}
+      ${st.review_pending ? `<button class="review" id="rev">
         ${ico('review')}
         <span>
           <div class="rt">Разбор ошибок</div>
           <div class="rs">${st.review_pending} ${plural(st.review_pending,'вопрос','вопроса','вопросов')} ждёт повторения</div>
         </span><span class="ra">${ico('arrow')}</span></button>` : ''}
-    <div class="well"><div class="wrap" style="min-height:${total}px;background:linear-gradient(180deg,#E9F4F9 0px,rgba(233,244,249,0) 170px),url('${imgUrl(MAP_BG)}') top center/100% auto no-repeat,linear-gradient(180deg,#DCEBF4 0%,#B4D6E8 45%,#8FBFD6 100%)">
       <div class="bubbles" id="bubbles"></div>
       <div class="nodes">
         ${lessons.map((l,i)=>{
