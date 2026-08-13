@@ -700,23 +700,13 @@ function renderMap(){
       <div class="t">${course.title}</div>
     </div>
     ${nextTimer}
-    <div class="goal">
-      <div class="goalrow">
-        <span>Цель дня</span>
-        <span class="${st.daily_goal_met?'done':''}">${st.daily_xp} / ${st.daily_goal_xp} ${ico('xp')}${st.daily_goal_met?' '+ico('ok'):''}</span>
-      </div>
-      <div class="track"><div class="fill ${st.daily_goal_met?'met':''}" style="width:${pct}%"></div></div>
-      <div class="goalset">
-        ${[10,20,40,70].map(g=>`<button class="gbtn ${g===st.daily_goal_xp?'on':''}" data-goal="${g}">${g}</button>`).join('')}
-      </div>
-    </div>
     ${st.review_pending ? `<button class="review" id="rev">
         ${ico('review')}
         <span>
           <div class="rt">Разбор ошибок</div>
           <div class="rs">${st.review_pending} ${plural(st.review_pending,'вопрос','вопроса','вопросов')} ждёт повторения</div>
         </span><span class="ra">${ico('arrow')}</span></button>` : ''}
-    <div class="well"><div class="wrap" style="min-height:${total}px;background:url('${imgUrl(MAP_BG)}') top center/100% auto no-repeat, linear-gradient(180deg,#DCEBF4 0%,#B4D6E8 45%,#8FBFD6 100%)">
+    <div class="well"><div class="wrap" style="min-height:${total}px;background:linear-gradient(180deg,#E9F4F9 0px,rgba(233,244,249,0) 170px),url('${imgUrl(MAP_BG)}') top center/100% auto no-repeat,linear-gradient(180deg,#DCEBF4 0%,#B4D6E8 45%,#8FBFD6 100%)">
       <div class="bubbles" id="bubbles"></div>
       <div class="nodes">
         ${lessons.map((l,i)=>{
@@ -760,12 +750,6 @@ function renderMap(){
   const rev = document.getElementById('rev');
   if(rev) rev.onclick = startReview;
   document.getElementById('prof').onclick = renderProfile;
-  root.querySelectorAll('.gbtn').forEach(b => b.onclick = async () => {
-    try{
-      await api('/api/v1/game/daily-goal', {method:'PUT', body:{daily_goal_xp: +b.dataset.goal}});
-      loadMap();
-    }catch(e){ alert(e.message) }
-  });
 }
 
 function shuffle(a){
@@ -1352,7 +1336,10 @@ async function renderProfile(){
       <div class="prow"><span class="lbl">${ico('level')}Уровень</span><b>${st.level}</b></div>
       <div class="prow"><span class="lbl">${ico('xp')}Опыт</span><b>${st.xp}</b></div>
       <div class="prow"><span class="lbl">${ico('streak')}Поток</span><b>${st.streak_count}</b></div>
-      <div class="prow"><span class="lbl">${ico('goal')}Цель дня</span><b>${st.daily_xp} / ${st.daily_goal_xp}</b></div>
+      <div class="prow"><span class="lbl">${ico('goal')}Цель дня</span><b class="${st.daily_goal_met?'done':''}">${st.daily_xp} / ${st.daily_goal_xp}${st.daily_goal_met?' '+ico('ok'):''}</b></div>
+      <div class="goalset" style="margin:4px 0 14px">
+        ${[10,20,40,70].map(g=>`<button class="gbtn ${g===st.daily_goal_xp?'on':''}" data-goal="${g}">${g}</button>`).join('')}
+      </div>
       <div class="prow"><span class="lbl">${ico('review')}Ждёт разбора</span><b>${st.review_pending}</b></div>
       <div class="prow"><span class="lbl">${ico('streak')}Заморозки потока</span><b>${st.streak_freezes} ❄</b></div>
 
@@ -1393,6 +1380,12 @@ async function renderProfile(){
   };
 
   document.getElementById('del').onclick = renderDeleteConfirm;
+  root.querySelectorAll('.gbtn').forEach(b => b.onclick = async () => {
+    try{
+      await api('/api/v1/game/daily-goal', {method:'PUT', body:{daily_goal_xp: +b.dataset.goal}});
+      renderProfile();
+    }catch(e){ alert(e.message) }
+  });
 }
 
 function renderDeleteConfirm(){
