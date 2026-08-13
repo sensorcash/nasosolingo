@@ -716,8 +716,7 @@ function renderMap(){
           <div class="rt">Разбор ошибок</div>
           <div class="rs">${st.review_pending} ${plural(st.review_pending,'вопрос','вопроса','вопросов')} ждёт повторения</div>
         </span><span class="ra">${ico('arrow')}</span></button>` : ''}
-    <div class="well"><div class="wrap" style="min-height:${total}px;background:url('${imgUrl(MAP_BG)}') top center/100% 100% no-repeat">
-      ${MAP_LAYERS.map(l=>`<div class="mlb" style="top:${Math.round(l.t*total)}px">${l.lb}</div>`).join('')}
+    <div class="well"><div class="wrap" style="min-height:${total}px;background:url('${imgUrl(MAP_BG)}') top center/100% auto no-repeat, linear-gradient(180deg,#DCEBF4 0%,#B4D6E8 45%,#8FBFD6 100%)">
       <div class="bubbles" id="bubbles"></div>
       <div class="nodes">
         ${lessons.map((l,i)=>{
