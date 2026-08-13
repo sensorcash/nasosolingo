@@ -71,6 +71,7 @@
   .wrap{position:relative;padding:14px 0 40px}
   .strata{position:absolute;left:0;right:0}
   .strata .lb{position:absolute;left:12px;top:6px;font-size:10px;font-weight:800;letter-spacing:.08em;opacity:.65;text-transform:uppercase}
+  .mlb{position:absolute;left:12px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45);z-index:1;padding-top:6px}
   .casing{position:absolute;left:50%;top:0;bottom:0;width:92px;margin-left:-46px;background:rgba(255,255,255,.34);border-left:3px solid rgba(255,255,255,.7);border-right:3px solid rgba(255,255,255,.7)}
   .nodes{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center}
   .nw{display:flex;flex-direction:column;align-items:center;margin:13px 0}
@@ -664,12 +665,15 @@ function renderMap(){
 
   const H = 118;
   const total = Math.max(lessons.length * H + 90, 380);
-  const bands = [
-    {t:0, h:total*0.10, c:'#EAF6FB', lb:''},
-    {t:total*0.10, h:total*0.22, c:'var(--soil1)', lb:'Чернозём'},
-    {t:total*0.32, h:total*0.22, c:'var(--soil2)', lb:'Глина'},
-    {t:total*0.54, h:total*0.14, c:'var(--sand)', lb:'Песок'},
-    {t:total*0.68, h:total*0.32, c:'var(--water)', lb:'Водоносный слой'},
+  // Фон карты — картинка map/bg.jpg, растягивается на всю высоту (как раньше полосы).
+  // Подписи слоёв держатся на процентах глубины. Меняешь фон — подставь свой файл
+  // с тем же именем. Хочешь другие слои — правь проценты ниже (или очисти MAP_LAYERS).
+  const MAP_BG = 'map/bg.jpg';
+  const MAP_LAYERS = [
+    {lb:'Чернозём',        t:0.10},
+    {lb:'Глина',           t:0.32},
+    {lb:'Песок',           t:0.54},
+    {lb:'Водоносный слой', t:0.68},
   ];
 
   const drops = Array.from({length: st.max_lives}, (_,i) => {
@@ -712,10 +716,8 @@ function renderMap(){
           <div class="rt">Разбор ошибок</div>
           <div class="rs">${st.review_pending} ${plural(st.review_pending,'вопрос','вопроса','вопросов')} ждёт повторения</div>
         </span><span class="ra">${ico('arrow')}</span></button>` : ''}
-    <!-- nolives-флаг вычислен ниже --><div class="well"><div class="wrap" style="min-height:${total}px">
-      ${bands.map(b=>`<div class="strata" style="top:${b.t}px;height:${b.h}px;background:${b.c}">
-        ${b.lb?`<div class="lb">${b.lb}</div>`:''}</div>`).join('')}
-      <div class="casing"></div>
+    <div class="well"><div class="wrap" style="min-height:${total}px;background:url('${imgUrl(MAP_BG)}') top center/100% 100% no-repeat">
+      ${MAP_LAYERS.map(l=>`<div class="mlb" style="top:${Math.round(l.t*total)}px">${l.lb}</div>`).join('')}
       <div class="bubbles" id="bubbles"></div>
       <div class="nodes">
         ${lessons.map((l,i)=>{
