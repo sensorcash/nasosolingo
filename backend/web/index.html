@@ -74,7 +74,7 @@
   .mlb{position:absolute;left:12px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45);z-index:1;padding-top:6px}
   .casing{position:absolute;left:50%;top:0;bottom:0;width:92px;margin-left:-46px;background:rgba(255,255,255,.34);border-left:3px solid rgba(255,255,255,.7);border-right:3px solid rgba(255,255,255,.7)}
   .nodes{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center}
-  .nw{display:flex;flex-direction:column;align-items:center;margin:13px 0}
+  .nw{display:flex;flex-direction:column;align-items:center;margin:6px 0}
   .node{width:72px;height:72px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;
     font-size:27px;color:#fff;background:var(--lock);box-shadow:0 6px 0 rgba(0,0,0,.13);position:relative}
   .node.done{background:var(--spring);box-shadow:0 6px 0 var(--spring-dark)}
@@ -83,7 +83,7 @@
   .node.locked{color:#7C93A0}
   .cap{position:absolute;bottom:-13px;background:#fff;color:var(--aqua);font-size:11px;font-weight:800;padding:3px 11px;border-radius:20px;box-shadow:0 3px 0 var(--line);white-space:nowrap}
   .nt{margin-top:8px;font-size:12px;font-weight:800;color:var(--ink);max-width:140px;text-align:center;line-height:1.25}
-  .l{transform:translateX(-44px)} .r{transform:translateX(44px)}
+  .l{transform:translateX(-30px)} .r{transform:translateX(30px)}
 
   /* урок */
   .ltop{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;flex:none}
@@ -663,7 +663,7 @@ function renderMap(){
   const lessons = [];
   course.units.forEach(u => u.lessons.forEach(l => lessons.push({...l, unit: u.title})));
 
-  const H = 118;
+  const H = 96;
   const total = Math.max(lessons.length * H + 90, 380);
   // Фон карты — картинка map/bg.jpg, растягивается на всю высоту (как раньше полосы).
   // Подписи слоёв держатся на процентах глубины. Меняешь фон — подставь свой файл
@@ -724,8 +724,7 @@ function renderMap(){
           const gated = nolives && l.status === 'available';
           const icon = ico(l.status==='done' ? 'done' : gated ? 'locked' : l.status==='available' ? 'current' : 'locked');
           const side = i%2===0 ? 'l' : 'r';
-          const cap = (l.status==='available' && !gated) ? `<span class="cap">Продолжить</span>`
-                    : gated ? `<span class="cap wait">нужна капля</span>` : '';
+          const cap = gated ? `<span class="cap wait">нужна капля</span>` : '';
           const cls = gated ? 'gated' : l.status;
           return `<div class="nw">
             <button class="node ${cls} ${side}" data-id="${l.id}" data-st="${l.status}"
